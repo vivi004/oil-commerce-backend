@@ -1,0 +1,9 @@
+package com.oilcommerce.wishlist.entity;
+import com.oilcommerce.common.BaseEntity; import com.oilcommerce.product.entity.Product; import com.oilcommerce.user.entity.User;
+import jakarta.persistence.*; import lombok.*;
+@Entity @Table(name = "wishlists", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id","product_id"}))
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class WishlistItem extends BaseEntity {
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id", nullable = false) private User user;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "product_id", nullable = false) private Product product;
+}
