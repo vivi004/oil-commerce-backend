@@ -119,7 +119,11 @@ public class EmailService {
                 log.error("Resend API returned status {}: {}", response.statusCode(), response.body());
                 return false;
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Resend email request interrupted for {}: {}", toEmail, e.getMessage());
+            return false;
+        } catch (java.io.IOException e) {
             log.error("Failed to send email via Resend to {}: {}", toEmail, e.getMessage());
             return false;
         }
@@ -152,7 +156,11 @@ public class EmailService {
                 log.error("Brevo API returned status {}: {}", response.statusCode(), response.body());
                 return false;
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Brevo email request interrupted for {}: {}", toEmail, e.getMessage());
+            return false;
+        } catch (java.io.IOException e) {
             log.error("Failed to send email via Brevo to {}: {}", toEmail, e.getMessage());
             return false;
         }
@@ -176,7 +184,7 @@ public class EmailService {
 
             mailSender.send(message);
             log.info("Password reset email successfully sent via SMTP to {}", toEmail);
-        } catch (Exception e) {
+        } catch (jakarta.mail.MessagingException | java.io.UnsupportedEncodingException | org.springframework.mail.MailException e) {
             log.error("Failed to send password reset email via SMTP to {}: {}", toEmail, e.getMessage());
         }
     }
