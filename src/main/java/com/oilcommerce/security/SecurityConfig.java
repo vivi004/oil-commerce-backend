@@ -51,6 +51,21 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/brands/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/tenants/**", "/admin/tenants/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/inventory/**", "/admin/inventory/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/platform-settings/**", "/admin/platform-settings/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/mandi-benchmarks/**", "/admin/mandi-benchmarks/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/reports/**", "/admin/reports/**").permitAll()
+                // Administrative operational endpoints
+                .requestMatchers(HttpMethod.POST, "/inventory/**", "/admin/inventory/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/tenants/**", "/admin/tenants/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/tenants/**", "/admin/tenants/**").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/tenants/**", "/admin/tenants/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/tenants/**", "/admin/tenants/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/platform-settings/**", "/admin/platform-settings/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/mandi-benchmarks/**", "/admin/mandi-benchmarks/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/mandi-benchmarks/**", "/admin/mandi-benchmarks/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/mandi-benchmarks/**", "/admin/mandi-benchmarks/**").permitAll()
                 // Actuator health
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 // Static files

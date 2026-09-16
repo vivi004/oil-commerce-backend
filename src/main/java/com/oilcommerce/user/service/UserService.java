@@ -116,8 +116,15 @@ public class UserService {
         return userMapper.toDto(userRepository.save(user));
     }
 
+    @Transactional
+    public void adminDeleteUser(UUID targetUserId) {
+        User user = findById(targetUserId);
+        userRepository.delete(user);
+    }
+
     private User findById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
     }
 }
+

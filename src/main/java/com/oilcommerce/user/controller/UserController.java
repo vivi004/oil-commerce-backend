@@ -73,7 +73,16 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User credentials updated successfully", userService.adminUpdateUser(id, request)));
     }
 
+    @Operation(summary = "Delete user account (Super Admin only)")
+    @DeleteMapping("/admin/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> adminDeleteUser(@PathVariable UUID id) {
+        userService.adminDeleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+    }
+
     private UUID currentUserId(UserDetails ud) {
         return UUID.fromString(ud.getUsername());
     }
 }
+
