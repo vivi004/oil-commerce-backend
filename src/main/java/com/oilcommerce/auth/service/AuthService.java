@@ -120,18 +120,21 @@ public class AuthService {
     }
 
     @Transactional
-    public void forgotPassword(ForgotPasswordRequest request) {
+    public String forgotPassword(ForgotPasswordRequest request) {
         String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
-        userRepository.findByEmailIgnoreCase(cleanEmail).ifPresentOrElse(user -> {
+        return userRepository.findByEmailIgnoreCase(cleanEmail).map(user -> {
             user.setPasswordResetToken(UUID.randomUUID().toString());
             user.setPasswordResetTokenExpiry(Instant.now().plusSeconds(3600));
             userRepository.save(user);
             log.info("Password reset token generated for: {}", user.getEmail());
+            String token = user.getPasswordResetToken();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
-                emailService.sendPasswordResetEmail(user.getEmail(), user.getPasswordResetToken());
+                emailService.sendPasswordResetEmail(user.getEmail(), token);
             });
-        }, () -> {
+            return token;
+        }).orElseGet(() -> {
             log.warn("Password reset requested for email not found in database: {}", cleanEmail);
+            return null;
         });
     }
 
