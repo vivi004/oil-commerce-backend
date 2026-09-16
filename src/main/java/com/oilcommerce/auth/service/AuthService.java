@@ -122,18 +122,41 @@ public class AuthService {
     @Transactional
     public String forgotPassword(ForgotPasswordRequest request) {
         String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        log.info("--------------------------------------------------------------------------------");
+        log.info("[Forgot Password Flow] Step 1/4: Lookup user account for email: '{}'", cleanEmail);
+
+        if (cleanEmail.isBlank()) {
+            log.error("[Forgot Password Flow] Error: Email provided in request is blank or null!");
+            return null;
+        }
+
         return userRepository.findByEmailIgnoreCase(cleanEmail).map(user -> {
-            user.setPasswordResetToken(UUID.randomUUID().toString());
-            user.setPasswordResetTokenExpiry(Instant.now().plusSeconds(3600));
+            String token = UUID.randomUUID().toString();
+            Instant expiry = Instant.now().plusSeconds(3600);
+            user.setPasswordResetToken(token);
+            user.setPasswordResetTokenExpiry(expiry);
             userRepository.save(user);
-            log.info("Password reset token generated for: {}", user.getEmail());
-            String token = user.getPasswordResetToken();
+
+            log.info("[Forgot Password Flow] Step 2/4: Generated reset token for user ID '{}' ({})", user.getId(), user.getEmail());
+            log.info("[Forgot Password Flow] Token: '{}' (expires in 1 hour at {})", token, expiry);
+
+            log.info("[Forgot Password Flow] Step 3/4: Successfully persisted reset token to database.");
+            log.info("[Forgot Password Flow] Step 4/4: Triggering EmailService.sendPasswordResetEmail() for: '{}'", user.getEmail());
+
             java.util.concurrent.CompletableFuture.runAsync(() -> {
-                emailService.sendPasswordResetEmail(user.getEmail(), token);
+                try {
+                    emailService.sendPasswordResetEmail(user.getEmail(), token);
+                    log.info("[Forgot Password Flow] EmailService completed dispatch for: {}", user.getEmail());
+                } catch (Exception e) {
+                    log.error("[Forgot Password Flow] Exception during email dispatch for {}: {}", user.getEmail(), e.getMessage(), e);
+                }
             });
+
+            log.info("--------------------------------------------------------------------------------");
             return token;
         }).orElseGet(() -> {
-            log.warn("Password reset requested for email not found in database: {}", cleanEmail);
+            log.warn("[Forgot Password Flow] User lookup failed: Email '{}' does not exist in database.", cleanEmail);
+            log.info("--------------------------------------------------------------------------------");
             return null;
         });
     }

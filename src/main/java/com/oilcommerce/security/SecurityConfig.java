@@ -45,8 +45,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Swagger
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                // Auth endpoints
-                .requestMatchers("/auth/**").permitAll()
+                // Auth & test endpoints
+                .requestMatchers("/auth/**", "/test/**").permitAll()
                 // Public read-only product/category endpoints
                 .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()

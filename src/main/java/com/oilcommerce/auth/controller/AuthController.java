@@ -7,7 +7,6 @@ import com.oilcommerce.user.dto.UserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,10 +17,14 @@ import java.util.UUID;
 @Tag(name = "Auth", description = "Authentication & Authorization endpoints")
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+
+    // Explicit constructor ensuring IDE language servers and Spring handle injection cleanly
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @Operation(summary = "Login with email and password")
     @PostMapping("/login")

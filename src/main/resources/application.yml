@@ -76,6 +76,11 @@ jwt:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300,http://localhost:4201,http://localhost:3000}
 
+resend:
+  api:
+    key: ${RESEND_API_KEY:}
+  from: ${RESEND_FROM:onboarding@resend.dev}
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300,http://localhost:4201,http://localhost:3000}
@@ -86,7 +91,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
   email:
     resend-api-key: ${RESEND_API_KEY:}
-    resend-from: ${RESEND_FROM:Nisha Pure Oils <onboarding@resend.dev>}
+    resend-from: ${RESEND_FROM:onboarding@resend.dev}
     brevo-api-key: ${BREVO_API_KEY:}
     brevo-from-email: ${BREVO_FROM_EMAIL:${SPRING_MAIL_USERNAME:vivinmani20@gmail.com}}
     brevo-from-name: ${BREVO_FROM_NAME:Nisha Pure Oils}
