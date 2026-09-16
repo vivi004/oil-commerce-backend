@@ -30,13 +30,14 @@ public class TestEmailController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> sendTestEmail(@Valid @RequestBody TestEmailRequest request) {
         log.info("[Test Email Endpoint] Initiating test email delivery for '{}'", request.getEmail());
 
-        EmailService.ResendResult result = emailService.sendTestEmail(request.getEmail());
+        EmailService.EmailSendResult result = emailService.sendTestEmail(request.getEmail());
 
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("recipient", request.getEmail());
         responseData.put("statusCode", result.statusCode());
         responseData.put("responseBody", result.responseBody());
         responseData.put("sender", emailService.resolveSenderEmail());
+        responseData.put("elapsedMs", result.elapsedMs());
 
         if (result.success()) {
             return ResponseEntity.ok(ApiResponse.success("Test email sent successfully via Resend", responseData));
@@ -45,9 +46,9 @@ public class TestEmailController {
             if (status == null || status.is2xxSuccessful()) {
                 status = HttpStatus.INTERNAL_SERVER_ERROR;
             }
-            responseData.put("error", result.errorMessage());
+            responseData.put("error", result.message());
             return ResponseEntity.status(status)
-                    .body(ApiResponse.success("Failed to deliver test email via Resend: " + result.errorMessage(), responseData));
+                    .body(ApiResponse.success("Failed to deliver test email via Resend: " + result.message(), responseData));
         }
     }
 }

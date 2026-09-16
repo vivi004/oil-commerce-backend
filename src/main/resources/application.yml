@@ -88,7 +88,7 @@ app:
     upload-dir: ./uploads
     max-size: 5242880
     allowed-types: image/jpeg,image/png,image/webp
-  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  frontend-url: ${APP_FRONTEND_URL:${FRONTEND_URL:https://oil-commerce-frontend.onrender.com}}
   email:
     resend-api-key: ${RESEND_API_KEY:}
     resend-from: ${RESEND_FROM:onboarding@resend.dev}

@@ -33,7 +33,7 @@ class TestEmailControllerTest {
     @Test
     void testSendTestEmail_Success() {
         when(emailService.sendTestEmail(anyString()))
-                .thenReturn(new EmailService.ResendResult(true, 200, "{\"id\":\"msg_123\"}", null));
+                .thenReturn(new EmailService.EmailSendResult(true, 200, "{\"id\":\"msg_123\"}", "Email accepted", 150));
 
         TestEmailRequest request = new TestEmailRequest("recipient@example.com");
         ResponseEntity<ApiResponse<Map<String, Object>>> response = controller.sendTestEmail(request);
@@ -50,7 +50,7 @@ class TestEmailControllerTest {
     @Test
     void testSendTestEmail_ResendFailure() {
         when(emailService.sendTestEmail(anyString()))
-                .thenReturn(new EmailService.ResendResult(false, 403, "{\"statusCode\":403,\"message\":\"validation_error\"}", "Forbidden"));
+                .thenReturn(new EmailService.EmailSendResult(false, 403, "{\"statusCode\":403,\"message\":\"validation_error\"}", "Forbidden", 120));
 
         TestEmailRequest request = new TestEmailRequest("unregistered@example.com");
         ResponseEntity<ApiResponse<Map<String, Object>>> response = controller.sendTestEmail(request);

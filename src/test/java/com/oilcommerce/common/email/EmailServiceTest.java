@@ -57,19 +57,19 @@ class EmailServiceTest {
 
     @Test
     void testSendViaResendDetailed_RejectsInvalidEmail() {
-        EmailService.ResendResult result = emailService.sendViaResendDetailed("invalid-email", "Subject", "<p>Hello</p>");
+        EmailService.EmailSendResult result = emailService.sendViaResendDetailed("invalid-email", "Subject", "<p>Hello</p>");
         assertFalse(result.success());
         assertEquals(400, result.statusCode());
-        assertTrue(result.errorMessage().contains("Invalid recipient email format"));
+        assertTrue(result.message().contains("Invalid recipient email format"));
     }
 
     @Test
     void testSendViaResendDetailed_RejectsMissingApiKey() {
         ReflectionTestUtils.setField(emailService, "resendApiKey", "");
-        EmailService.ResendResult result = emailService.sendViaResendDetailed("test@example.com", "Subject", "<p>Hello</p>");
+        EmailService.EmailSendResult result = emailService.sendViaResendDetailed("test@example.com", "Subject", "<p>Hello</p>");
         assertFalse(result.success());
         assertEquals(500, result.statusCode());
-        assertTrue(result.errorMessage().contains("RESEND_API_KEY is not configured"));
+        assertTrue(result.message().contains("RESEND_API_KEY is not configured"));
     }
 
     @Test

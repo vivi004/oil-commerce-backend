@@ -58,13 +58,31 @@ public class AuthController {
     @Operation(summary = "Request password reset email")
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<java.util.Map<String, String>>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        String token = authService.forgotPassword(request);
-        java.util.Map<String, String> data = new java.util.HashMap<>();
-        if (token != null) {
-            data.put("token", token);
-            data.put("resetUrl", "/auth/reset-password?token=" + token);
+        AuthService.ForgotPasswordResult result = authService.forgotPassword(request);
+
+        if (!result.userFound()) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    "If this email exists, a reset link has been sent",
+                    java.util.Collections.emptyMap()
+            ));
         }
-        return ResponseEntity.ok(ApiResponse.success("If this email exists, a reset link has been sent", data));
+
+        if (result.emailSent()) {
+            java.util.Map<String, String> data = new java.util.HashMap<>();
+            data.put("token", result.token());
+            data.put("resetUrl", "/auth/reset-password?token=" + result.token());
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Password reset email sent successfully",
+                    data
+            ));
+        }
+
+        HttpStatus status = HttpStatus.resolve(result.statusCode());
+        if (status == null || status.is2xxSuccessful()) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return ResponseEntity.status(status)
+                .body(ApiResponse.error(result.message()));
     }
 
     @Operation(summary = "Reset password using token from email")
