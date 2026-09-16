@@ -127,7 +127,9 @@ public class AuthService {
             user.setPasswordResetTokenExpiry(Instant.now().plusSeconds(3600));
             userRepository.save(user);
             log.info("Password reset token generated for: {}", user.getEmail());
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getPasswordResetToken());
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                emailService.sendPasswordResetEmail(user.getEmail(), user.getPasswordResetToken());
+            });
         }, () -> {
             log.warn("Password reset requested for email not found in database: {}", cleanEmail);
         });
