@@ -33,11 +33,12 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(cleanEmail, request.getPassword()));
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
+        User user = userRepository.findByEmailIgnoreCase(cleanEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", cleanEmail));
 
         user.setLastLoginAt(Instant.now());
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
@@ -55,7 +56,8 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        if (userRepository.existsByEmailIgnoreCase(cleanEmail)) {
             throw new BusinessException("Email already registered", HttpStatus.CONFLICT);
         }
         if (!request.getPassword().equals(request.getConfirmPassword())) {
@@ -65,7 +67,7 @@ public class AuthService {
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .email(request.getEmail())
+                .email(cleanEmail)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .emailVerificationToken(UUID.randomUUID().toString())
@@ -119,12 +121,15 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
-        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+        String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        userRepository.findByEmailIgnoreCase(cleanEmail).ifPresentOrElse(user -> {
             user.setPasswordResetToken(UUID.randomUUID().toString());
             user.setPasswordResetTokenExpiry(Instant.now().plusSeconds(3600));
             userRepository.save(user);
             log.info("Password reset token generated for: {}", user.getEmail());
             emailService.sendPasswordResetEmail(user.getEmail(), user.getPasswordResetToken());
+        }, () -> {
+            log.warn("Password reset requested for email not found in database: {}", cleanEmail);
         });
     }
 

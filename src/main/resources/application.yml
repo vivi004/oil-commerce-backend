@@ -52,6 +52,9 @@ spring:
           auth: true
           starttls:
             enable: true
+            required: true
+          ssl:
+            trust: ${SPRING_MAIL_HOST:smtp.gmail.com}
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
@@ -81,6 +84,12 @@ app:
     max-size: 5242880
     allowed-types: image/jpeg,image/png,image/webp
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  email:
+    resend-api-key: ${RESEND_API_KEY:}
+    resend-from: ${RESEND_FROM:Nisha Pure Oils <onboarding@resend.dev>}
+    brevo-api-key: ${BREVO_API_KEY:}
+    brevo-from-email: ${BREVO_FROM_EMAIL:${SPRING_MAIL_USERNAME:vivinmani20@gmail.com}}
+    brevo-from-name: ${BREVO_FROM_NAME:Nisha Pure Oils}
   google-sheet:
     pricing-url: https://docs.google.com/spreadsheets/d/1h2O9GLqQaTVUvU2w0pwBMEu9T8FzJSaqu-pn-KGRce4/edit?usp=sharing
 
@@ -106,6 +115,9 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+  health:
+    mail:
+      enabled: false
 
 logging:
   level:
