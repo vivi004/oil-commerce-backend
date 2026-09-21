@@ -117,9 +117,42 @@ public class UserService {
     }
 
     @Transactional
+    public UserDto adminCreateUser(AdminCreateUserRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException("A user with email " + email + " already exists.");
+        }
+
+        com.oilcommerce.user.entity.UserRole role = com.oilcommerce.user.entity.UserRole.TENANT_ADMIN;
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
+            try {
+                role = com.oilcommerce.user.entity.UserRole.valueOf(request.getRole().trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        User user = User.builder()
+                .firstName(request.getFirstName().trim())
+                .lastName(request.getLastName() != null ? request.getLastName().trim() : "")
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword().trim()))
+                .phone(request.getPhone() != null ? request.getPhone().trim() : "")
+                .role(role)
+                .emailVerified(true)
+                .active(request.getActive() != null ? request.getActive() : true)
+                .build();
+
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+    @Transactional
     public void adminDeleteUser(UUID targetUserId) {
         User user = findById(targetUserId);
-        userRepository.delete(user);
+        try {
+            userRepository.delete(user);
+        } catch (Exception e) {
+            user.setActive(false);
+            userRepository.save(user);
+        }
     }
 
     private User findById(UUID userId) {

@@ -64,6 +64,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers()));
     }
 
+    @Operation(summary = "Provision a new user or administrative account (Super Admin only)")
+    @PostMapping("/admin/create")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<UserDto>> adminCreateUser(
+            @Valid @RequestBody AdminCreateUserRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.success("User created successfully", userService.adminCreateUser(request)));
+    }
+
     @Operation(summary = "Update user username, details, or password (Super Admin only)")
     @PutMapping("/admin/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
