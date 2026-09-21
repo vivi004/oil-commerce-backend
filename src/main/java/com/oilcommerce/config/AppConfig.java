@@ -32,8 +32,8 @@ public class AppConfig implements WebMvcConfigurer {
         return flyway -> {
             try {
                 flyway.repair();
-            } catch (Exception e) {
-                // Log and continue to migrate
+            } catch (org.flywaydb.core.api.FlywayException ignored) {
+                // Ignore repair failures and proceed to migration
             }
             flyway.migrate();
         };
