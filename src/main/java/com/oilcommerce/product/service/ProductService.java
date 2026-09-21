@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 @Service @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -148,7 +149,7 @@ public class ProductService {
             if (filter.getBrand() != null && !filter.getBrand().isEmpty()) {
                 predicates.add(root.get("brand").get("name").in(filter.getBrand()));
             }
-            return cb.and(predicates.toArray(new Predicate[0]));
+            return cb.and(predicates.toArray(Predicate[]::new));
         };
     }
 

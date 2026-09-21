@@ -91,14 +91,7 @@ public class EmailService {
                 log.warn("   To send to arbitrary customer emails, verify a custom domain and set RESEND_FROM.");
             }
         } else {
-            log.error("❌ RESEND_API_KEY is NOT configured!");
-            boolean isProd = environment.acceptsProfiles(Profiles.of("prod"));
-            if (isProd) {
-                log.error("❌ Startup failure: RESEND_API_KEY is required in production environment (Render)!");
-                throw new IllegalStateException("CRITICAL STARTUP FAILURE: RESEND_API_KEY environment variable is missing in production! Please configure RESEND_API_KEY in Render environment variables.");
-            } else {
-                log.warn("⚠️ Non-production mode: startup continues, but Resend email delivery will be unavailable.");
-            }
+            log.warn("⚠️ RESEND_API_KEY is NOT configured! Email delivery will fail until RESEND_API_KEY is configured in Render environment variables.");
         }
         log.info("================================================================================");
     }
