@@ -10,6 +10,7 @@ import com.oilcommerce.product.dto.*;
 import com.oilcommerce.product.entity.*;
 import com.oilcommerce.product.mapper.ProductMapper;
 import com.oilcommerce.product.repository.ProductRepository;
+import com.oilcommerce.product.repository.ProductVariantRepository;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -23,6 +24,7 @@ import java.util.*;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
@@ -90,7 +92,7 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
 
-        if (req.getWeightVariants() != null) {
+        if (req.getWeightVariants() != null && !req.getWeightVariants().isEmpty()) {
             List<ProductVariant> variants = req.getWeightVariants().stream().map(v ->
                 ProductVariant.builder()
                     .product(saved).code(v.getCode()).label(v.getLabel())
@@ -100,7 +102,8 @@ public class ProductService {
                     .stockQuantity(v.getStockQuantity()).enabled(v.isEnabled()).imageUrl(v.getImageUrl())
                     .build()
             ).toList();
-            saved.setVariants(variants);
+            List<ProductVariant> savedVariants = productVariantRepository.saveAll(variants);
+            saved.setVariants(savedVariants);
             productRepository.save(saved);
         }
         return productMapper.toDto(saved);
@@ -112,12 +115,55 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product","id",id));
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category","id",req.getCategoryId()));
-        p.setName(req.getName()); p.setDescription(req.getDescription());
-        p.setShortDescription(req.getShortDescription()); p.setPrice(req.getPrice());
-        p.setCompareAtPrice(req.getCompareAtPrice()); p.setStock(req.getStock());
-        p.setImages(req.getImages()); p.setThumbnail(req.getThumbnail());
-        p.setCategory(category); p.setStatus(req.getStatus());
-        p.setFeatured(req.isFeatured()); p.setOnSale(req.isOnSale()); p.setBestSeller(req.isBestSeller());
+        Brand brand = req.getBrandId() != null ? brandRepository.findById(req.getBrandId()).orElse(null) : null;
+
+        if (req.getName() != null && !req.getName().equalsIgnoreCase(p.getName())) {
+            p.setName(req.getName());
+            p.setSlug(generateSlug(req.getName()));
+        }
+        p.setDescription(req.getDescription());
+        p.setShortDescription(req.getShortDescription());
+        p.setPrice(req.getPrice());
+        p.setCompareAtPrice(req.getCompareAtPrice());
+        p.setSku(req.getSku());
+        p.setBarcode(req.getBarcode());
+        p.setStock(req.getStock());
+        p.setLowStockThreshold(req.getLowStockThreshold());
+        p.setImages(req.getImages());
+        p.setThumbnail(req.getThumbnail());
+        p.setCategory(category);
+        p.setBrand(brand);
+        p.setTags(req.getTags());
+        p.setBenefits(req.getBenefits());
+        p.setExtractionMethod(req.getExtractionMethod());
+        p.setSmokePoint(req.getSmokePoint());
+        p.setPurity(req.getPurity());
+        p.setShelfLife(req.getShelfLife());
+        p.setOrigin(req.getOrigin());
+        p.setStatus(req.getStatus());
+        p.setFeatured(req.isFeatured());
+        p.setOnSale(req.isOnSale());
+        p.setBestSeller(req.isBestSeller());
+        p.setSeoTitle(req.getSeoTitle());
+        p.setSeoDescription(req.getSeoDescription());
+
+        if (req.getWeightVariants() != null) {
+            List<ProductVariant> existing = productVariantRepository.findByProductIdAndDeletedFalse(p.getId());
+            productVariantRepository.deleteAll(existing);
+
+            List<ProductVariant> newVariants = req.getWeightVariants().stream().map(v ->
+                ProductVariant.builder()
+                    .product(p).code(v.getCode()).label(v.getLabel())
+                    .mrp(v.getMrp()).sellingPrice(v.getSellingPrice())
+                    .discountPercent(v.getDiscountPercent()).gstPercent(v.getGstPercent())
+                    .sku(v.getSku()).barcode(v.getBarcode())
+                    .stockQuantity(v.getStockQuantity()).enabled(v.isEnabled()).imageUrl(v.getImageUrl())
+                    .build()
+            ).toList();
+            List<ProductVariant> savedVariants = productVariantRepository.saveAll(newVariants);
+            p.setVariants(savedVariants);
+        }
+
         return productMapper.toDto(productRepository.save(p));
     }
 
@@ -127,6 +173,11 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product","id",id));
         p.setDeleted(true);
         productRepository.save(p);
+        List<ProductVariant> variants = productVariantRepository.findByProductIdAndDeletedFalse(p.getId());
+        for (ProductVariant v : variants) {
+            v.setDeleted(true);
+        }
+        productVariantRepository.saveAll(variants);
     }
 
     private Specification<Product> buildSpec(ProductFilterRequest filter) {

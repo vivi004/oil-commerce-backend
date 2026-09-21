@@ -62,7 +62,7 @@ public class PaymentService {
                 });
             }
             return valid;
-        } catch (Exception e) {
+        } catch (java.security.NoSuchAlgorithmException | java.security.InvalidKeyException e) {
             log.error("Payment verification failed: {}", e.getMessage());
             return false;
         }

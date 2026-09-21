@@ -15,7 +15,7 @@ public class FileUploadController {
     @Value("${file.upload-dir:./uploads}") private String uploadDir;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("permitAll()")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiResponse<Map<String,String>>> upload(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(ApiResponse.success("File uploaded", fileUploadService.uploadFile(file)));
@@ -27,9 +27,23 @@ public class FileUploadController {
             var path = Paths.get(uploadDir).resolve(filename);
             Resource res = new UrlResource(path.toUri());
             if (!res.exists()) return ResponseEntity.notFound().build();
+
+            String contentType = null;
+            try {
+                contentType = java.nio.file.Files.probeContentType(path);
+            } catch (java.io.IOException ignored) {}
+
+            if (contentType == null) {
+                if (filename.toLowerCase().endsWith(".png")) contentType = "image/png";
+                else if (filename.toLowerCase().endsWith(".webp")) contentType = "image/webp";
+                else if (filename.toLowerCase().endsWith(".svg")) contentType = "image/svg+xml";
+                else contentType = "image/jpeg";
+            }
+
             return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
+                .contentType(MediaType.parseMediaType(contentType))
                 .body(res);
         } catch (MalformedURLException e) { return ResponseEntity.badRequest().build(); }
     }

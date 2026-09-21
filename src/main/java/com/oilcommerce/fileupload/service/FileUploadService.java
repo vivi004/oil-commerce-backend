@@ -33,7 +33,7 @@ public class FileUploadService {
             Path dest = dir.resolve(filename);
             Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
-            String url = "/files/" + filename;
+            String url = "/api/files/" + filename;
             log.info("File uploaded: {}", filename);
             return Map.of("url", url, "filename", filename, "size", String.valueOf(file.getSize()));
         } catch (IOException e) {

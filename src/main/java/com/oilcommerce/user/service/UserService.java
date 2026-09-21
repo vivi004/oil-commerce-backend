@@ -150,7 +150,8 @@ public class UserService {
         User user = findById(targetUserId);
         try {
             userRepository.delete(user);
-        } catch (Exception e) {
+            userRepository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
             user.setActive(false);
             userRepository.save(user);
         }
