@@ -130,6 +130,7 @@ public class UserService {
             } catch (IllegalArgumentException ignored) {}
         }
 
+        boolean isActive = request.getActive() == null || Boolean.TRUE.equals(request.getActive());
         User user = User.builder()
                 .firstName(request.getFirstName().trim())
                 .lastName(request.getLastName() != null ? request.getLastName().trim() : "")
@@ -138,7 +139,7 @@ public class UserService {
                 .phone(request.getPhone() != null ? request.getPhone().trim() : "")
                 .role(role)
                 .emailVerified(true)
-                .active(request.getActive() != null ? request.getActive() : true)
+                .active(isActive)
                 .build();
 
         return userMapper.toDto(userRepository.save(user));

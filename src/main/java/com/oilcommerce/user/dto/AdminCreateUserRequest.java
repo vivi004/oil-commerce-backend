@@ -1,6 +1,5 @@
 package com.oilcommerce.user.dto;
 
-import com.oilcommerce.user.entity.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
