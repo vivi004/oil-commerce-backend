@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Tag(name = "Categories", description = "Product category management")
 @RestController
-@RequestMapping("/categories")
+@RequestMapping({"/categories", "/admin/categories"})
 @RequiredArgsConstructor
 public class CategoryController {
 
@@ -42,8 +42,6 @@ public class CategoryController {
 
     @Operation(summary = "Create new category")
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN','SUPER_ADMIN')")
-    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiResponse<CategoryDto>> create(@Valid @RequestBody CategoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Category created", categoryService.createCategory(request)));
@@ -51,8 +49,6 @@ public class CategoryController {
 
     @Operation(summary = "Update category")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN','SUPER_ADMIN')")
-    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiResponse<CategoryDto>> update(
             @PathVariable UUID id, @Valid @RequestBody CategoryRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Category updated", categoryService.updateCategory(id, request)));
@@ -60,8 +56,6 @@ public class CategoryController {
 
     @Operation(summary = "Delete category (soft delete)")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN','SUPER_ADMIN')")
-    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(ApiResponse.success("Category deleted", null));
