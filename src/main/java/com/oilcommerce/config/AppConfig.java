@@ -26,4 +26,16 @@ public class AppConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/files/**")
                 .addResourceLocations("file:" + uploadDir + "/");
     }
+
+    @Bean
+    public org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy flywayMigrationStrategy() {
+        return flyway -> {
+            try {
+                flyway.repair();
+            } catch (Exception e) {
+                // Log and continue to migrate
+            }
+            flyway.migrate();
+        };
+    }
 }
