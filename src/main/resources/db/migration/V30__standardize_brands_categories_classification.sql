@@ -1,77 +1,148 @@
 -- V30: Standardize Oil Brands, Categories and Product Classification
 
--- 1. Ensure canonical entries for all 4 active brands
-INSERT INTO brands (id, name, slug, description, tagline, origin, active)
-VALUES
-    (gen_random_uuid(), 'Nisha Pure Oils', 'nisha-pure-oils',
-     '100% Traditional Vaagai Wood Churned & Cold-Pressed Virgin Heritage Oils preserving ancient extraction methods for maximum nutrition and purity.',
-     'Pure. Traditional. Nourishing.', 'Kangeyam, Tamil Nadu', TRUE)
-ON CONFLICT (slug) DO UPDATE
-    SET name = EXCLUDED.name,
-        description = EXCLUDED.description,
-        tagline = EXCLUDED.tagline,
-        origin = EXCLUDED.origin,
-        active = TRUE,
-        deleted = FALSE;
+DO $$
+BEGIN
+    -- 1. Consolidate 'nisha-pure-oil' duplicate if both exist
+    IF EXISTS (SELECT 1 FROM brands WHERE slug = 'nisha-pure-oil') AND EXISTS (SELECT 1 FROM brands WHERE slug = 'nisha-pure-oils') THEN
+        -- Reassign any products from 'nisha-pure-oil' to 'nisha-pure-oils'
+        UPDATE products
+        SET brand_id = (SELECT id FROM brands WHERE slug = 'nisha-pure-oils' LIMIT 1)
+        WHERE brand_id = (SELECT id FROM brands WHERE slug = 'nisha-pure-oil' LIMIT 1);
+        -- Delete the old duplicate
+        DELETE FROM brands WHERE slug = 'nisha-pure-oil';
+    ELSIF EXISTS (SELECT 1 FROM brands WHERE slug = 'nisha-pure-oil') THEN
+        UPDATE brands
+        SET name = 'Nisha Pure Oils',
+            slug = 'nisha-pure-oils',
+            description = '100% Traditional Vaagai Wood Churned & Cold-Pressed Virgin Heritage Oils preserving ancient extraction methods for maximum nutrition and purity.',
+            tagline = 'Pure. Traditional. Nourishing.',
+            origin = 'Kangeyam, Tamil Nadu',
+            active = TRUE,
+            deleted = FALSE
+        WHERE slug = 'nisha-pure-oil';
+    END IF;
 
-INSERT INTO brands (id, name, slug, description, tagline, origin, active)
-VALUES
-    (gen_random_uuid(), 'Roshini Gold', 'roshini-gold',
-     'High-Heat Culinary Cooking Label formulated for high heat stability, crisp frying, and everyday wholesome meals.',
-     'Purity in Every Drop', 'Kangeyam, Tamil Nadu', TRUE)
-ON CONFLICT (slug) DO UPDATE
-    SET name = EXCLUDED.name,
-        description = EXCLUDED.description,
-        tagline = EXCLUDED.tagline,
-        origin = EXCLUDED.origin,
-        active = TRUE,
-        deleted = FALSE;
+    -- Upsert Nisha Pure Oils
+    IF NOT EXISTS (SELECT 1 FROM brands WHERE slug = 'nisha-pure-oils') THEN
+        IF EXISTS (SELECT 1 FROM brands WHERE LOWER(name) = 'nisha pure oils') THEN
+            UPDATE brands
+            SET name = 'Nisha Pure Oils',
+                slug = 'nisha-pure-oils',
+                description = '100% Traditional Vaagai Wood Churned & Cold-Pressed Virgin Heritage Oils preserving ancient extraction methods for maximum nutrition and purity.',
+                tagline = 'Pure. Traditional. Nourishing.',
+                origin = 'Kangeyam, Tamil Nadu',
+                active = TRUE,
+                deleted = FALSE
+            WHERE LOWER(name) = 'nisha pure oils';
+        ELSE
+            INSERT INTO brands (id, name, slug, description, tagline, origin, active, deleted)
+            VALUES (gen_random_uuid(), 'Nisha Pure Oils', 'nisha-pure-oils',
+                    '100% Traditional Vaagai Wood Churned & Cold-Pressed Virgin Heritage Oils preserving ancient extraction methods for maximum nutrition and purity.',
+                    'Pure. Traditional. Nourishing.', 'Kangeyam, Tamil Nadu', TRUE, FALSE);
+        END IF;
+    ELSE
+        UPDATE brands
+        SET name = 'Nisha Pure Oils',
+            description = '100% Traditional Vaagai Wood Churned & Cold-Pressed Virgin Heritage Oils preserving ancient extraction methods for maximum nutrition and purity.',
+            tagline = 'Pure. Traditional. Nourishing.',
+            origin = 'Kangeyam, Tamil Nadu',
+            active = TRUE,
+            deleted = FALSE
+        WHERE slug = 'nisha-pure-oils';
+    END IF;
 
-INSERT INTO brands (id, name, slug, description, tagline, origin, active)
-VALUES
-    (gen_random_uuid(), 'Rosi Gold', 'rosi-gold',
-     'Wholesome Kitchen & Frying Commodities Label delivering premium culinary palm olein and multi-purpose oils.',
-     'Goodness of Tradition', 'Kangeyam, Tamil Nadu', TRUE)
-ON CONFLICT (slug) DO UPDATE
-    SET name = EXCLUDED.name,
-        description = EXCLUDED.description,
-        tagline = EXCLUDED.tagline,
-        origin = EXCLUDED.origin,
-        active = TRUE,
-        deleted = FALSE;
+    -- Upsert Roshini Gold
+    IF NOT EXISTS (SELECT 1 FROM brands WHERE slug = 'roshini-gold') THEN
+        IF EXISTS (SELECT 1 FROM brands WHERE LOWER(name) = 'roshini gold') THEN
+            UPDATE brands
+            SET slug = 'roshini-gold',
+                description = 'High-Heat Culinary Cooking Label formulated for high heat stability, crisp frying, and everyday wholesome meals.',
+                tagline = 'Purity in Every Drop',
+                origin = 'Kangeyam, Tamil Nadu',
+                active = TRUE,
+                deleted = FALSE
+            WHERE LOWER(name) = 'roshini gold';
+        ELSE
+            INSERT INTO brands (id, name, slug, description, tagline, origin, active, deleted)
+            VALUES (gen_random_uuid(), 'Roshini Gold', 'roshini-gold',
+                    'High-Heat Culinary Cooking Label formulated for high heat stability, crisp frying, and everyday wholesome meals.',
+                    'Purity in Every Drop', 'Kangeyam, Tamil Nadu', TRUE, FALSE);
+        END IF;
+    ELSE
+        UPDATE brands
+        SET name = 'Roshini Gold',
+            description = 'High-Heat Culinary Cooking Label formulated for high heat stability, crisp frying, and everyday wholesome meals.',
+            tagline = 'Purity in Every Drop',
+            origin = 'Kangeyam, Tamil Nadu',
+            active = TRUE,
+            deleted = FALSE
+        WHERE slug = 'roshini-gold';
+    END IF;
 
-INSERT INTO brands (id, name, slug, description, tagline, origin, active)
-VALUES
-    (gen_random_uuid(), 'Varshini Gold', 'varshini-gold',
-     'Premium Multi-Seed Culinary & Gold Standard Blends with high smoke point and zero cholesterol.',
-     'Gold Standard in Purity', 'Kangeyam, Tamil Nadu', TRUE)
-ON CONFLICT (slug) DO UPDATE
-    SET name = EXCLUDED.name,
-        description = EXCLUDED.description,
-        tagline = EXCLUDED.tagline,
-        origin = EXCLUDED.origin,
-        active = TRUE,
-        deleted = FALSE;
+    -- Upsert Rosi Gold
+    IF NOT EXISTS (SELECT 1 FROM brands WHERE slug = 'rosi-gold') THEN
+        IF EXISTS (SELECT 1 FROM brands WHERE LOWER(name) = 'rosi gold') THEN
+            UPDATE brands
+            SET slug = 'rosi-gold',
+                description = 'Wholesome Kitchen & Frying Commodities Label delivering premium culinary palm olein and multi-purpose oils.',
+                tagline = 'Goodness of Tradition',
+                origin = 'Kangeyam, Tamil Nadu',
+                active = TRUE,
+                deleted = FALSE
+            WHERE LOWER(name) = 'rosi gold';
+        ELSE
+            INSERT INTO brands (id, name, slug, description, tagline, origin, active, deleted)
+            VALUES (gen_random_uuid(), 'Rosi Gold', 'rosi-gold',
+                    'Wholesome Kitchen & Frying Commodities Label delivering premium culinary palm olein and multi-purpose oils.',
+                    'Goodness of Tradition', 'Kangeyam, Tamil Nadu', TRUE, FALSE);
+        END IF;
+    ELSE
+        UPDATE brands
+        SET name = 'Rosi Gold',
+            description = 'Wholesome Kitchen & Frying Commodities Label delivering premium culinary palm olein and multi-purpose oils.',
+            tagline = 'Goodness of Tradition',
+            origin = 'Kangeyam, Tamil Nadu',
+            active = TRUE,
+            deleted = FALSE
+        WHERE slug = 'rosi-gold';
+    END IF;
 
--- Also update existing lowercase slug 'nisha-pure-oil' if present
-UPDATE brands
-SET name = 'Nisha Pure Oils',
-    slug = 'nisha-pure-oils',
-    active = TRUE,
-    deleted = FALSE
-WHERE slug = 'nisha-pure-oil' OR slug = 'nisha-pure-oils';
+    -- Upsert Varshini Gold
+    IF NOT EXISTS (SELECT 1 FROM brands WHERE slug = 'varshini-gold') THEN
+        IF EXISTS (SELECT 1 FROM brands WHERE LOWER(name) = 'varshini gold') THEN
+            UPDATE brands
+            SET slug = 'varshini-gold',
+                description = 'Premium Multi-Seed Culinary & Gold Standard Blends with high smoke point and zero cholesterol.',
+                tagline = 'Gold Standard in Purity',
+                origin = 'Kangeyam, Tamil Nadu',
+                active = TRUE,
+                deleted = FALSE
+            WHERE LOWER(name) = 'varshini gold';
+        ELSE
+            INSERT INTO brands (id, name, slug, description, tagline, origin, active, deleted)
+            VALUES (gen_random_uuid(), 'Varshini Gold', 'varshini-gold',
+                    'Premium Multi-Seed Culinary & Gold Standard Blends with high smoke point and zero cholesterol.',
+                    'Gold Standard in Purity', 'Kangeyam, Tamil Nadu', TRUE, FALSE);
+        END IF;
+    ELSE
+        UPDATE brands
+        SET name = 'Varshini Gold',
+            description = 'Premium Multi-Seed Culinary & Gold Standard Blends with high smoke point and zero cholesterol.',
+            tagline = 'Gold Standard in Purity',
+            origin = 'Kangeyam, Tamil Nadu',
+            active = TRUE,
+            deleted = FALSE
+        WHERE slug = 'varshini-gold';
+    END IF;
 
-UPDATE brands
-SET deleted = FALSE,
-    active = TRUE
-WHERE slug IN ('nisha-pure-oils', 'roshini-gold', 'rosi-gold', 'varshini-gold');
+    -- 2. Update Edible Oil Category Icon
+    UPDATE categories
+    SET icon = '🫗',
+        description = 'Premium multi-seed traditional cold-pressed edible cooking oils.',
+        active = TRUE
+    WHERE slug = 'edible-oil';
 
--- 2. Update Edible Oil Category Icon to clean pouring liquid emoji (UTF-8 encoded)
-UPDATE categories
-SET icon = '🫗',
-    description = 'Premium multi-seed traditional cold-pressed edible cooking oils.',
-    active = TRUE
-WHERE slug = 'edible-oil';
+END $$;
 
 -- 3. Update products with their exact Brand, Category, and Extraction Method
 DO $$
@@ -92,10 +163,10 @@ DECLARE
     cat_palm_id UUID;
     cat_edible_id UUID;
 BEGIN
-    SELECT id INTO brand_nisha_id FROM brands WHERE slug = 'nisha-pure-oils' LIMIT 1;
-    SELECT id INTO brand_roshini_id FROM brands WHERE slug = 'roshini-gold' LIMIT 1;
-    SELECT id INTO brand_rosi_id FROM brands WHERE slug = 'rosi-gold' LIMIT 1;
-    SELECT id INTO brand_varshini_id FROM brands WHERE slug = 'varshini-gold' LIMIT 1;
+    SELECT id INTO brand_nisha_id FROM brands WHERE slug IN ('nisha-pure-oils', 'nisha-pure-oil') OR LOWER(name) = 'nisha pure oils' ORDER BY created_at ASC LIMIT 1;
+    SELECT id INTO brand_roshini_id FROM brands WHERE slug = 'roshini-gold' OR LOWER(name) = 'roshini gold' ORDER BY created_at ASC LIMIT 1;
+    SELECT id INTO brand_rosi_id FROM brands WHERE slug = 'rosi-gold' OR LOWER(name) = 'rosi gold' ORDER BY created_at ASC LIMIT 1;
+    SELECT id INTO brand_varshini_id FROM brands WHERE slug = 'varshini-gold' OR LOWER(name) = 'varshini gold' ORDER BY created_at ASC LIMIT 1;
 
     SELECT id INTO cat_groundnut_id FROM categories WHERE slug = 'groundnut-oil' LIMIT 1;
     SELECT id INTO cat_coconut_id FROM categories WHERE slug = 'coconut-oil' LIMIT 1;
