@@ -230,7 +230,22 @@ public class ProductService {
             }
 
             List<ProductVariant> savedVariants = productVariantRepository.saveAll(toSave);
-            p.setVariants(savedVariants.stream().filter(v -> !v.isDeleted()).toList());
+            List<ProductVariant> activeVariants = new ArrayList<>();
+            for (ProductVariant v : savedVariants) {
+                if (!v.isDeleted()) {
+                    activeVariants.add(v);
+                }
+            }
+            if (p.getVariants() != null) {
+                try {
+                    p.getVariants().clear();
+                    p.getVariants().addAll(activeVariants);
+                } catch (Exception e) {
+                    p.setVariants(activeVariants);
+                }
+            } else {
+                p.setVariants(activeVariants);
+            }
         }
 
         return productMapper.toDto(productRepository.save(p));
