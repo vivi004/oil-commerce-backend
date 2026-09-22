@@ -164,19 +164,73 @@ public class ProductService {
 
         if (req.getWeightVariants() != null) {
             List<ProductVariant> existing = productVariantRepository.findByProductIdAndDeletedFalse(p.getId());
-            productVariantRepository.deleteAll(existing);
 
-            List<ProductVariant> newVariants = req.getWeightVariants().stream().map(v ->
-                ProductVariant.builder()
-                    .product(p).code(v.getCode()).label(v.getLabel())
-                    .mrp(v.getMrp()).sellingPrice(v.getSellingPrice())
-                    .discountPercent(v.getDiscountPercent()).gstPercent(v.getGstPercent())
-                    .sku(v.getSku()).barcode(v.getBarcode())
-                    .stockQuantity(v.getStockQuantity()).enabled(v.isEnabled()).imageUrl(v.getImageUrl())
-                    .build()
-            ).toList();
-            List<ProductVariant> savedVariants = productVariantRepository.saveAll(newVariants);
-            p.setVariants(savedVariants);
+            Map<String, ProductVariant> existingBySku = new HashMap<>();
+            Map<String, ProductVariant> existingByCode = new HashMap<>();
+            for (ProductVariant ev : existing) {
+                if (ev.getSku() != null) existingBySku.put(ev.getSku().trim().toLowerCase(), ev);
+                if (ev.getCode() != null) existingByCode.put(ev.getCode().trim().toLowerCase(), ev);
+            }
+
+            Set<UUID> matchedVariantIds = new HashSet<>();
+            List<ProductVariant> toSave = new ArrayList<>();
+
+            for (ProductVariantRequest v : req.getWeightVariants()) {
+                String sku = v.getSku() != null ? v.getSku().trim() : null;
+                String code = v.getCode() != null ? v.getCode().trim() : null;
+
+                ProductVariant matched = null;
+                if (sku != null && existingBySku.containsKey(sku.toLowerCase())) {
+                    matched = existingBySku.get(sku.toLowerCase());
+                } else if (code != null && existingByCode.containsKey(code.toLowerCase())) {
+                    matched = existingByCode.get(code.toLowerCase());
+                }
+
+                if (matched != null) {
+                    matchedVariantIds.add(matched.getId());
+                    matched.setCode(v.getCode());
+                    matched.setLabel(v.getLabel());
+                    matched.setMrp(v.getMrp());
+                    matched.setSellingPrice(v.getSellingPrice());
+                    matched.setDiscountPercent(v.getDiscountPercent());
+                    matched.setGstPercent(v.getGstPercent());
+                    matched.setSku(v.getSku());
+                    matched.setBarcode(v.getBarcode());
+                    matched.setStockQuantity(v.getStockQuantity());
+                    matched.setEnabled(v.isEnabled());
+                    matched.setImageUrl(v.getImageUrl());
+                    matched.setDeleted(false);
+                    toSave.add(matched);
+                } else {
+                    ProductVariant newVar = ProductVariant.builder()
+                        .product(p)
+                        .code(v.getCode())
+                        .label(v.getLabel())
+                        .mrp(v.getMrp())
+                        .sellingPrice(v.getSellingPrice())
+                        .discountPercent(v.getDiscountPercent())
+                        .gstPercent(v.getGstPercent())
+                        .sku(v.getSku())
+                        .barcode(v.getBarcode())
+                        .stockQuantity(v.getStockQuantity())
+                        .enabled(v.isEnabled())
+                        .imageUrl(v.getImageUrl())
+                        .build();
+                    toSave.add(newVar);
+                }
+            }
+
+            // Soft-delete variants that were removed from the product
+            for (ProductVariant ev : existing) {
+                if (!matchedVariantIds.contains(ev.getId())) {
+                    ev.setDeleted(true);
+                    ev.setSku(ev.getSku() + "-del-" + System.currentTimeMillis());
+                    toSave.add(ev);
+                }
+            }
+
+            List<ProductVariant> savedVariants = productVariantRepository.saveAll(toSave);
+            p.setVariants(savedVariants.stream().filter(v -> !v.isDeleted()).toList());
         }
 
         return productMapper.toDto(productRepository.save(p));
