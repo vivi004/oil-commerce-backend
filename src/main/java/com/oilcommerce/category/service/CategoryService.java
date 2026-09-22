@@ -56,7 +56,9 @@ public class CategoryService {
     @Transactional
     @CacheEvict(value = "categories", allEntries = true)
     public CategoryDto createCategory(CategoryRequest request) {
-        String slug = generateSlug(request.getName());
+        String slug = (request.getSlug() != null && !request.getSlug().isBlank())
+                ? request.getSlug().trim().toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "")
+                : generateSlug(request.getName());
         Optional<Category> bySlug = categoryRepository.findBySlug(slug);
         if (bySlug.isPresent()) {
             return categoryMapper.toDto(bySlug.get());

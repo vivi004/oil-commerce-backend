@@ -1,8 +1,10 @@
 package com.oilcommerce.product.dto;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.*; import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductVariantRequest {
     @NotBlank private String code;
     @NotBlank private String label;
