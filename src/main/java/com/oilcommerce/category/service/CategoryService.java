@@ -55,12 +55,24 @@ public class CategoryService {
     @Transactional
     @CacheEvict(value = "categories", allEntries = true)
     public CategoryDto createCategory(CategoryRequest request) {
+        String slug = generateSlug(request.getName());
+        Optional<Category> bySlug = categoryRepository.findBySlug(slug);
+        if (bySlug.isPresent()) {
+            return categoryMapper.toDto(bySlug.get());
+        }
+        Optional<Category> byName = categoryRepository.findAll().stream()
+                .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(request.getName().trim()))
+                .findFirst();
+        if (byName.isPresent()) {
+            return categoryMapper.toDto(byName.get());
+        }
+
         Category category = Category.builder()
-                .name(request.getName())
-                .slug(generateSlug(request.getName()))
+                .name(request.getName().trim())
+                .slug(slug)
                 .description(request.getDescription())
                 .image(request.getImage())
-                .icon(request.getIcon())
+                .icon(request.getIcon() != null ? request.getIcon() : "🛢️")
                 .active(request.isActive())
                 .sortOrder(request.getSortOrder())
                 .build();

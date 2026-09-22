@@ -17,8 +17,16 @@ public class BrandService {
 
     @Transactional
     public BrandDto createBrand(BrandRequest req) {
+        String slug = req.getName().trim().toLowerCase().replaceAll("[^a-z0-9]+","-");
+        Optional<Brand> existing = brandRepository.findAll().stream()
+            .filter(b -> b.getName() != null && (b.getName().equalsIgnoreCase(req.getName().trim()) || slug.equalsIgnoreCase(b.getSlug())))
+            .findFirst();
+        if (existing.isPresent()) {
+            return brandMapper.toDto(existing.get());
+        }
+
         Brand brand = Brand.builder()
-            .name(req.getName()).slug(req.getName().toLowerCase().replaceAll("[^a-z0-9]+","-"))
+            .name(req.getName().trim()).slug(slug)
             .description(req.getDescription()).logo(req.getLogo())
             .tagline(req.getTagline()).origin(req.getOrigin()).active(req.isActive()).build();
         return brandMapper.toDto(brandRepository.save(brand));
