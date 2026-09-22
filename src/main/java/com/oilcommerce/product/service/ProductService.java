@@ -230,6 +230,13 @@ public class ProductService {
     }
 
     private String generateSlug(String name) {
-        return name.toLowerCase().replaceAll("[^a-z0-9]+","-").replaceAll("^-|-$","");
+        String base = name.toLowerCase().replaceAll("[^a-z0-9]+","-").replaceAll("^-|-$","");
+        if (base.isBlank()) base = "product";
+        String slug = base;
+        int counter = 1;
+        while (productRepository.findBySlugAndDeletedFalse(slug).isPresent()) {
+            slug = base + "-" + counter++;
+        }
+        return slug;
     }
 }
