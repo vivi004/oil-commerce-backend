@@ -32,10 +32,14 @@ public class BrandService {
             return brandMapper.toDto(brandRepository.save(b));
         }
 
-        Brand brand = Brand.builder()
-            .name(req.getName().trim()).slug(slug)
-            .description(req.getDescription()).logo(req.getLogo())
-            .tagline(req.getTagline()).origin(req.getOrigin()).active(req.isActive()).build();
+        Brand brand = new Brand();
+        brand.setName(req.getName().trim());
+        brand.setSlug(slug);
+        brand.setDescription(req.getDescription());
+        brand.setLogo(req.getLogo());
+        brand.setTagline(req.getTagline());
+        brand.setOrigin(req.getOrigin());
+        brand.setActive(req.isActive());
         return brandMapper.toDto(brandRepository.save(brand));
     }
 
