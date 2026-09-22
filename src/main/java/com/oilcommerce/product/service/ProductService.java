@@ -5,6 +5,7 @@ import com.oilcommerce.brand.repository.BrandRepository;
 import com.oilcommerce.category.entity.Category;
 import com.oilcommerce.category.repository.CategoryRepository;
 import com.oilcommerce.common.PaginatedResponse;
+import com.oilcommerce.exception.BusinessException;
 import com.oilcommerce.exception.ResourceNotFoundException;
 import com.oilcommerce.product.dto.*;
 import com.oilcommerce.product.entity.*;
@@ -71,6 +72,12 @@ public class ProductService {
 
     @Transactional
     public ProductDto createProduct(ProductRequest req) {
+        // Pre-flight: check for duplicate SKU before hitting the DB constraint
+        if (productRepository.existsBySkuAndDeletedFalse(req.getSku())) {
+            throw new BusinessException(
+                "SKU '" + req.getSku() + "' is already used by another product. Please choose a different Base SKU.",
+                org.springframework.http.HttpStatus.CONFLICT);
+        }
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category","id",req.getCategoryId()));
         Brand brand = req.getBrandId() != null ? brandRepository.findById(req.getBrandId()).orElse(null) : null;
@@ -116,6 +123,14 @@ public class ProductService {
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category","id",req.getCategoryId()));
         Brand brand = req.getBrandId() != null ? brandRepository.findById(req.getBrandId()).orElse(null) : null;
+
+        // Pre-flight: check for duplicate SKU on update (exclude current product)
+        if (req.getSku() != null && !req.getSku().equals(p.getSku())
+                && productRepository.existsBySkuAndDeletedFalseAndIdNot(req.getSku(), id)) {
+            throw new BusinessException(
+                "SKU '" + req.getSku() + "' is already used by another product. Please choose a different Base SKU.",
+                org.springframework.http.HttpStatus.CONFLICT);
+        }
 
         if (req.getName() != null && !req.getName().equalsIgnoreCase(p.getName())) {
             p.setName(req.getName());

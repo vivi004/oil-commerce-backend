@@ -16,6 +16,9 @@ import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     Optional<Product> findBySlugAndDeletedFalse(String slug);
+    boolean existsBySkuAndDeletedFalse(String sku);
+    boolean existsBySkuAndDeletedFalseAndIdNot(String sku, java.util.UUID id);
+    boolean existsBySlugAndDeletedFalseAndIdNot(String slug, java.util.UUID id);
     List<Product> findByFeaturedAndStatusAndDeletedFalseOrderByCreatedAtDesc(boolean featured, ProductStatus status, Pageable pageable);
     long countByCategoryIdAndDeletedFalse(UUID categoryId);
 
