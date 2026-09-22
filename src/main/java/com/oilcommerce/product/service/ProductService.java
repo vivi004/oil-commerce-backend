@@ -187,10 +187,14 @@ public class ProductService {
         Product p = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product","id",id));
         p.setDeleted(true);
+        String suffix = "-del-" + System.currentTimeMillis();
+        p.setSku(p.getSku() + suffix);
+        p.setSlug(p.getSlug() + suffix);
         productRepository.save(p);
         List<ProductVariant> variants = productVariantRepository.findByProductIdAndDeletedFalse(p.getId());
         for (ProductVariant v : variants) {
             v.setDeleted(true);
+            v.setSku(v.getSku() + suffix);
         }
         productVariantRepository.saveAll(variants);
     }
