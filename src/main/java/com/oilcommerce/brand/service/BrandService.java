@@ -22,7 +22,14 @@ public class BrandService {
             .filter(b -> b.getName() != null && (b.getName().equalsIgnoreCase(req.getName().trim()) || slug.equalsIgnoreCase(b.getSlug())))
             .findFirst();
         if (existing.isPresent()) {
-            return brandMapper.toDto(existing.get());
+            Brand b = existing.get();
+            b.setDeleted(false);
+            b.setActive(true);
+            b.setName(req.getName().trim());
+            b.setDescription(req.getDescription());
+            b.setTagline(req.getTagline());
+            b.setOrigin(req.getOrigin());
+            return brandMapper.toDto(brandRepository.save(b));
         }
 
         Brand brand = Brand.builder()
@@ -37,6 +44,7 @@ public class BrandService {
         Brand b = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Brand","id",id));
         b.setName(req.getName()); b.setDescription(req.getDescription()); b.setLogo(req.getLogo());
         b.setTagline(req.getTagline()); b.setOrigin(req.getOrigin()); b.setActive(req.isActive());
+        b.setDeleted(false);
         return brandMapper.toDto(brandRepository.save(b));
     }
 
