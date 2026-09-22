@@ -96,7 +96,7 @@ app:
     brevo-from-email: ${BREVO_FROM_EMAIL:${SPRING_MAIL_USERNAME:vivinmani20@gmail.com}}
     brevo-from-name: ${BREVO_FROM_NAME:Nisha Pure Oils}
   google-sheet:
-    pricing-url: https://docs.google.com/spreadsheets/d/1h2O9GLqQaTVUvU2w0pwBMEu9T8FzJSaqu-pn-KGRce4/edit?usp=sharing
+    pricing-url: https://docs.google.com/spreadsheets/d/1-jUkelMl4CmVZnNhmIgHj0shXvG5-3UDZ8s5LRhw0UE/edit?usp=sharing
 
 razorpay:
   key-id: YOUR_RAZORPAY_KEY_ID
