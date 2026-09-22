@@ -5,7 +5,7 @@ import com.oilcommerce.brand.mapper.BrandMapper; import com.oilcommerce.brand.re
 import com.oilcommerce.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
-import java.util.List; import java.util.UUID;
+import java.util.List; import java.util.Optional; import java.util.UUID;
 
 @Service @RequiredArgsConstructor
 public class BrandService {
