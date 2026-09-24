@@ -37,15 +37,15 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
     // Columns (0-indexed):
     //  Col 0  : Size label (100ml, 200ml, 500ml, 1ltr, 2ltr, 5ltr, 5kg, 15ltr, 15kg)
     //  Col 1  : Groundnut Oil    → NPO-GNO
-    //  Col 2  : Coconut Oil      → NPO-COC
-    //  Col 3  : Sesame Oil       → NPO-SES
-    //  Col 4  : Castor Oil       → NPO-CAS
-    //  Col 5  : Lamp Oil         → NPO-LMP
-    //  Col 6  : Neem Oil         → NPO-NEM
-    //  Col 7  : Mahua Oil        → NPO-MAH
+    //  Col 2  : Coconut Oil      → NPO-CCO
+    //  Col 3  : Sesame Oil       → NPO-SSO
+    //  Col 4  : Castor Oil       → NPO-CO
+    //  Col 5  : Lamp Oil         → NPO-LO
+    //  Col 6  : Neem Oil         → NPO-NO
+    //  Col 7  : Mahua Oil        → NPO-MO
     //  Col 8  : Edible Oil       → VG-EO
-    //  Col 9  : Sunflower Oil    → RG-SFO
-    //  Col 10 : Palm Oil         → RSG-PO
+    //  Col 9  : Sunflower Oil    → RO-SO
+    //  Col 10 : Palm Oil         → RG-PO
     // -------------------------------------------------------------------------
 
     /** col-index → {productName, skuPrefix} */
@@ -56,15 +56,15 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
 
     static {
         COL_PRODUCTS.put(1,  new String[]{"Groundnut Oil",  "NPO-GNO"});
-        COL_PRODUCTS.put(2,  new String[]{"Coconut Oil",    "NPO-COC"});
-        COL_PRODUCTS.put(3,  new String[]{"Sesame Oil",     "NPO-SES"});
-        COL_PRODUCTS.put(4,  new String[]{"Castor Oil",     "NPO-CAS"});
-        COL_PRODUCTS.put(5,  new String[]{"Lamp Oil",       "NPO-LMP"});
-        COL_PRODUCTS.put(6,  new String[]{"Neem Oil",       "NPO-NEM"});
-        COL_PRODUCTS.put(7,  new String[]{"Mahua Oil",      "NPO-MAH"});
+        COL_PRODUCTS.put(2,  new String[]{"Coconut Oil",    "NPO-CCO"});
+        COL_PRODUCTS.put(3,  new String[]{"Sesame Oil",     "NPO-SSO"});
+        COL_PRODUCTS.put(4,  new String[]{"Castor Oil",     "NPO-CO"});
+        COL_PRODUCTS.put(5,  new String[]{"Lamp Oil",       "NPO-LO"});
+        COL_PRODUCTS.put(6,  new String[]{"Neem Oil",       "NPO-NO"});
+        COL_PRODUCTS.put(7,  new String[]{"Mahua Oil",      "NPO-MO"});
         COL_PRODUCTS.put(8,  new String[]{"Edible Oil",     "VG-EO"});
-        COL_PRODUCTS.put(9,  new String[]{"Sunflower Oil",  "RG-SFO"});
-        COL_PRODUCTS.put(10, new String[]{"Palm Oil",       "RSG-PO"});
+        COL_PRODUCTS.put(9,  new String[]{"Sunflower Oil",  "RO-SO"});
+        COL_PRODUCTS.put(10, new String[]{"Palm Oil",       "RG-PO"});
     }
 
     static {
