@@ -160,11 +160,13 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
                 continue;
             }
 
-            Optional<ProductVariant> opt = variantRepository.findBySkuAndDeletedFalse(sku.trim());
+            Optional<ProductVariant> opt = variantRepository.findBySkuIgnoreCaseAndDeletedFalse(normalised);
             if (opt.isPresent()) {
                 ProductVariant variant = opt.get();
                 BigDecimal oldPrice = variant.getSellingPrice();
                 variant.setSellingPrice(newPrice);
+                variant.setPriceSyncedAt(java.time.Instant.now());
+                variant.setPriceSyncSource("GOOGLE_SHEET");
                 variantRepository.save(variant);
                 log.info("Updated SKU {} sellingPrice: {} → {}", sku, oldPrice, newPrice);
                 updated++;
@@ -272,10 +274,9 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
                 // Build expected SKU: e.g. NPO-GNO-1L
                 String expectedSku = skuPrefix + "-" + sizeCode;
 
-                // Look up variant in DB
-                Optional<ProductVariant> variantOpt = variantRepository.findBySkuAndDeletedFalse(expectedSku);
+                // Look up variant in DB (case-insensitive to be safe)
+                Optional<ProductVariant> variantOpt = variantRepository.findBySkuIgnoreCaseAndDeletedFalse(expectedSku);
                 if (variantOpt.isEmpty()) {
-                    // Try case-insensitive by iterating (in case SKU case differs)
                     log.debug("Variant SKU '{}' not found in DB, skipping", expectedSku);
                     continue;
                 }

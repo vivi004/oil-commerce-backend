@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, UUID> {
     Optional<ProductVariant> findBySkuAndDeletedFalse(String sku);
+    Optional<ProductVariant> findBySkuIgnoreCaseAndDeletedFalse(String sku);
     List<ProductVariant> findByProductIdAndDeletedFalse(UUID productId);
     List<ProductVariant> findByDeletedFalse();
 }

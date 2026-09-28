@@ -28,6 +28,12 @@ public class ProductVariant extends BaseEntity {
     @Column private boolean enabled = true;
     @Column private String imageUrl;
 
+    /** Set when price is updated via Google Sheet sync */
+    @Column private java.time.Instant priceSyncedAt;
+
+    /** "GOOGLE_SHEET" when last price update came from sheet sync, "MANUAL" otherwise */
+    @Column(length = 50) private String priceSyncSource;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -65,6 +71,12 @@ public class ProductVariant extends BaseEntity {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public java.time.Instant getPriceSyncedAt() { return priceSyncedAt; }
+    public void setPriceSyncedAt(java.time.Instant priceSyncedAt) { this.priceSyncedAt = priceSyncedAt; }
+
+    public String getPriceSyncSource() { return priceSyncSource; }
+    public void setPriceSyncSource(String priceSyncSource) { this.priceSyncSource = priceSyncSource; }
 
     public ProductStatus getStatus() { return status; }
     public void setStatus(ProductStatus status) { this.status = status; }
