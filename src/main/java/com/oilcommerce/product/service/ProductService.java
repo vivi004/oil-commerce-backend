@@ -104,7 +104,7 @@ public class ProductService {
                 ProductVariant.builder()
                     .product(saved).code(v.getCode()).label(v.getLabel())
                     .mrp(v.getMrp()).sellingPrice(v.getSellingPrice())
-                    .discountPercent(v.getDiscountPercent()).gstPercent(v.getGstPercent())
+                    .discountPercent(v.getDiscountPercent())
                     .sku(v.getSku()).barcode(v.getBarcode())
                     .stockQuantity(v.getStockQuantity()).enabled(v.isEnabled()).imageUrl(v.getImageUrl())
                     .build()
@@ -193,7 +193,6 @@ public class ProductService {
                     matched.setMrp(v.getMrp());
                     matched.setSellingPrice(v.getSellingPrice());
                     matched.setDiscountPercent(v.getDiscountPercent());
-                    matched.setGstPercent(v.getGstPercent());
                     matched.setSku(v.getSku());
                     matched.setBarcode(v.getBarcode());
                     matched.setStockQuantity(v.getStockQuantity());
@@ -209,7 +208,6 @@ public class ProductService {
                         .mrp(v.getMrp())
                         .sellingPrice(v.getSellingPrice())
                         .discountPercent(v.getDiscountPercent())
-                        .gstPercent(v.getGstPercent())
                         .sku(v.getSku())
                         .barcode(v.getBarcode())
                         .stockQuantity(v.getStockQuantity())

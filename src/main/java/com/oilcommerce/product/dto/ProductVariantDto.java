@@ -7,7 +7,7 @@ import java.math.BigDecimal; import java.util.UUID;
 public class ProductVariantDto {
     private UUID id;
     private String code, label, sku, barcode, imageUrl;
-    private BigDecimal mrp, sellingPrice, discountPercent, gstPercent;
+    private BigDecimal mrp, sellingPrice, discountPercent;
     private int stockQuantity;
     private boolean enabled;
     private ProductStatus status;
