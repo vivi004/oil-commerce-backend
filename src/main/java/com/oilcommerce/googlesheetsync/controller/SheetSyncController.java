@@ -80,6 +80,10 @@ public class SheetSyncController {
             if (skusRaw == null) skusRaw = body.get("productIds");
             if (skusRaw instanceof List<?> skuList) {
                 List<SheetSyncPreviewDto> preview = sheetSyncService.getPreview();
+                if (preview.isEmpty()) {
+                    // Cache might be empty after server restart — re-import from sheet
+                    preview = sheetSyncService.importFromSheet(null);
+                }
                 Map<String, BigDecimal> previewPrices = new LinkedHashMap<>();
                 for (SheetSyncPreviewDto item : preview) {
                     if (item.getSku() != null && item.getNewPrice() != null) {

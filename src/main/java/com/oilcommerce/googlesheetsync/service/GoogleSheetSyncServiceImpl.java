@@ -1,7 +1,9 @@
 package com.oilcommerce.googlesheetsync.service;
 
 import com.oilcommerce.googlesheetsync.dto.SheetSyncPreviewDto;
+import com.oilcommerce.product.entity.Product;
 import com.oilcommerce.product.entity.ProductVariant;
+import com.oilcommerce.product.repository.ProductRepository;
 import com.oilcommerce.product.repository.ProductVariantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +17,13 @@ import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -81,14 +86,17 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
     }
 
     private final ProductVariantRepository variantRepository;
+    private final ProductRepository productRepository;
     private final String defaultSheetUrl;
     private final List<SheetSyncPreviewDto> cachedPreview = new CopyOnWriteArrayList<>();
     private final AtomicLong lastSyncTimestamp = new AtomicLong(0);
 
     public GoogleSheetSyncServiceImpl(
             ProductVariantRepository variantRepository,
+            ProductRepository productRepository,
             @Value("${app.google-sheet.pricing-url:https://docs.google.com/spreadsheets/d/1-jUkelMl4CmVZnNhmIgHj0shXvG5-3UDZ8s5LRhw0UE/edit?usp=sharing}") String defaultSheetUrl) {
         this.variantRepository = variantRepository;
+        this.productRepository = productRepository;
         this.defaultSheetUrl   = defaultSheetUrl;
     }
 
@@ -145,6 +153,7 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
         log.info("Approving price sync for {} SKU(s): {}", skuPrices.size(), skuPrices.keySet());
 
         int updated = 0;
+        Set<Product> affectedProducts = new HashSet<>();
         for (Map.Entry<String, BigDecimal> entry : skuPrices.entrySet()) {
             String  sku      = entry.getKey().trim();
             BigDecimal newPrice = entry.getValue();
@@ -162,6 +171,9 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
                 variant.setPriceSyncedAt(java.time.Instant.now());
                 variant.setPriceSyncSource("GOOGLE_SHEET");
                 variantRepository.save(variant);
+                if (variant.getProduct() != null) {
+                    affectedProducts.add(variant.getProduct());
+                }
                 log.info("Updated SKU {} sellingPrice: {} → {}", sku, oldPrice, newPrice);
                 updated++;
             } else {
@@ -169,10 +181,39 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
             }
         }
 
+        // Recalculate and synchronize parent Product base price and compareAtPrice
+        for (Product product : affectedProducts) {
+            List<ProductVariant> variants = variantRepository.findByProductIdAndDeletedFalse(product.getId());
+            if (variants != null && !variants.isEmpty()) {
+                // Find default 1L variant if enabled
+                ProductVariant preferred = variants.stream()
+                        .filter(v -> v.isEnabled() && v.getCode() != null && v.getCode().equalsIgnoreCase("1L"))
+                        .findFirst()
+                        .orElse(null);
+
+                if (preferred == null) {
+                    // Otherwise find the lowest price enabled variant
+                    preferred = variants.stream()
+                            .filter(v -> v.isEnabled() && v.getSellingPrice() != null && v.getSellingPrice().compareTo(BigDecimal.ZERO) > 0)
+                            .min(Comparator.comparing(ProductVariant::getSellingPrice))
+                            .orElse(null);
+                }
+
+                if (preferred != null && preferred.getSellingPrice() != null) {
+                    product.setPrice(preferred.getSellingPrice());
+                    if (preferred.getMrp() != null && preferred.getMrp().compareTo(BigDecimal.ZERO) > 0) {
+                        product.setCompareAtPrice(preferred.getMrp());
+                    }
+                    productRepository.save(product);
+                    log.info("Updated parent Product '{}' (id={}) base price to {}", product.getName(), product.getId(), preferred.getSellingPrice());
+                }
+            }
+        }
+
         // Optionally clean matching entries from cached preview
         cachedPreview.removeIf(item -> item.getSku() != null && skuPrices.containsKey(item.getSku().trim()));
 
-        log.info("approveChanges: updated {} variant(s) in DB", updated);
+        log.info("approveChanges: updated {} variant(s) and {} parent product(s) in DB", updated, affectedProducts.size());
     }
 
     // =========================================================================
@@ -217,16 +258,14 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
         List<SheetSyncPreviewDto> diffs = new ArrayList<>();
         String[] lines = csvText.split("\r?\n");
 
-        if (lines.length < 3) {
-            log.warn("CSV has fewer than 3 lines — cannot parse");
+        if (lines.length < 2) {
+            log.warn("CSV has fewer than 2 lines — cannot parse");
             return diffs;
         }
 
-        // Row 0: brand header → SKIP
-        // Row 1: product name header → SKIP (column positions are fixed per our mapping)
-        // Rows 2+: size data rows
-
-        for (int rowIdx = 2; rowIdx < lines.length; rowIdx++) {
+        // Scan all lines; any row where col 0 matches a known size (100ml, 200ml, etc.) is processed.
+        // Header rows (brand/product names) will naturally not match SIZE_TO_CODE and will be skipped.
+        for (int rowIdx = 0; rowIdx < lines.length; rowIdx++) {
             String line = lines[rowIdx].trim();
             if (line.isEmpty()) continue;
 
