@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,17 +50,52 @@ public class SheetSyncController {
 
     /**
      * Persist approved price changes to the database.
-     * Body: { "skus": ["NPO-GNO-1L", "NPO-SES-500ML", ...] }
+     *
+     * Preferred body format (stateless — no server cache dependency):
+     *   { "skuPrices": { "NPO-GNO-1L": 210.00, "NPO-SSO-500ML": 145.00 } }
+     *
+     * Legacy body format (still accepted for backwards compatibility):
+     *   { "skus": ["NPO-GNO-1L", "NPO-SSO-500ML"] }
      */
     @Operation(summary = "Apply approved price changes to DB variants")
     @PostMapping("/approve")
-    public ResponseEntity<ApiResponse<Void>> approve(@RequestBody Map<String, List<String>> body) {
-        List<String> skus = body.get("skus");
-        // also accept legacy "productIds" key so older clients still work
-        if (skus == null || skus.isEmpty()) {
-            skus = body.get("productIds");
+    public ResponseEntity<ApiResponse<Void>> approve(@RequestBody Map<String, Object> body) {
+        Map<String, BigDecimal> skuPrices = new LinkedHashMap<>();
+
+        // --- Preferred: skuPrices map with prices embedded ---
+        Object skuPricesRaw = body.get("skuPrices");
+        if (skuPricesRaw instanceof Map<?, ?> rawMap) {
+            for (Map.Entry<?, ?> e : rawMap.entrySet()) {
+                if (e.getKey() instanceof String sku && e.getValue() != null) {
+                    try {
+                        skuPrices.put(sku, new BigDecimal(e.getValue().toString()));
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
         }
-        sheetSyncService.approveChanges(skus != null ? skus : List.of());
+
+        // --- Legacy fallback: only SKU list, look up price from cached preview ---
+        if (skuPrices.isEmpty()) {
+            Object skusRaw = body.get("skus");
+            if (skusRaw == null) skusRaw = body.get("productIds");
+            if (skusRaw instanceof List<?> skuList) {
+                List<SheetSyncPreviewDto> preview = sheetSyncService.getPreview();
+                Map<String, BigDecimal> previewPrices = new LinkedHashMap<>();
+                for (SheetSyncPreviewDto item : preview) {
+                    if (item.getSku() != null && item.getNewPrice() != null) {
+                        previewPrices.put(item.getSku().trim().toUpperCase(), item.getNewPrice());
+                    }
+                }
+                for (Object s : skuList) {
+                    if (s instanceof String sku) {
+                        BigDecimal price = previewPrices.get(sku.trim().toUpperCase());
+                        if (price != null) skuPrices.put(sku.trim(), price);
+                    }
+                }
+            }
+        }
+
+        sheetSyncService.approveChanges(skuPrices);
         return ResponseEntity.ok(ApiResponse.success("Price changes applied to DB.", null));
     }
 

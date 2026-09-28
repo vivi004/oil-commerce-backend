@@ -132,35 +132,29 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
     }
 
     // =========================================================================
-    // approveChanges — persist new prices to DB for approved SKUs
+    // approveChanges — persist new prices to DB
+    // Receives sku→price map directly from the client (stateless, cache-free)
     // =========================================================================
     @Override
     @Transactional
-    public void approveChanges(List<String> skus) {
-        if (skus == null || skus.isEmpty()) {
-            log.warn("approveChanges called with empty SKU list");
+    public void approveChanges(Map<String, BigDecimal> skuPrices) {
+        if (skuPrices == null || skuPrices.isEmpty()) {
+            log.warn("approveChanges called with empty skuPrices map");
             return;
         }
-        log.info("Approving price sync for {} SKU(s): {}", skus.size(), skus);
-
-        // Build a map of sku → newPrice from the cached preview
-        Map<String, BigDecimal> skuToNewPrice = new LinkedHashMap<>();
-        for (SheetSyncPreviewDto item : cachedPreview) {
-            if (item.getSku() != null && item.getNewPrice() != null) {
-                skuToNewPrice.put(item.getSku().trim().toUpperCase(), item.getNewPrice());
-            }
-        }
+        log.info("Approving price sync for {} SKU(s): {}", skuPrices.size(), skuPrices.keySet());
 
         int updated = 0;
-        for (String sku : skus) {
-            String normalised = sku.trim().toUpperCase();
-            BigDecimal newPrice = skuToNewPrice.get(normalised);
-            if (newPrice == null) {
-                log.warn("No cached new price found for SKU '{}', skipping", sku);
+        for (Map.Entry<String, BigDecimal> entry : skuPrices.entrySet()) {
+            String  sku      = entry.getKey().trim();
+            BigDecimal newPrice = entry.getValue();
+
+            if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                log.warn("Invalid price {} for SKU '{}', skipping", newPrice, sku);
                 continue;
             }
 
-            Optional<ProductVariant> opt = variantRepository.findBySkuIgnoreCaseAndDeletedFalse(normalised);
+            Optional<ProductVariant> opt = variantRepository.findBySkuIgnoreCaseAndDeletedFalse(sku);
             if (opt.isPresent()) {
                 ProductVariant variant = opt.get();
                 BigDecimal oldPrice = variant.getSellingPrice();
@@ -175,9 +169,8 @@ public class GoogleSheetSyncServiceImpl implements GoogleSheetSyncService {
             }
         }
 
-        // Remove approved items from cache
-        cachedPreview.removeIf(item -> item.getSku() != null && skus.stream()
-                .anyMatch(s -> s.trim().equalsIgnoreCase(item.getSku())));
+        // Optionally clean matching entries from cached preview
+        cachedPreview.removeIf(item -> item.getSku() != null && skuPrices.containsKey(item.getSku().trim()));
 
         log.info("approveChanges: updated {} variant(s) in DB", updated);
     }
