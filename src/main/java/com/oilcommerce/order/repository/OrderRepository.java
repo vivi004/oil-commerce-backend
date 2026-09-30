@@ -10,6 +10,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @EntityGraph(attributePaths = {"user", "items"})
     Page<Order> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
     Optional<Order> findByOrderNumberAndUserId(String orderNumber, UUID userId);
+    Optional<Order> findByOrderNumber(String orderNumber);
     Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 
     @EntityGraph(attributePaths = {"user", "items"})

@@ -9,6 +9,8 @@ import com.oilcommerce.exception.ResourceNotFoundException;
 import com.oilcommerce.order.dto.*;
 import com.oilcommerce.order.entity.*;
 import com.oilcommerce.order.repository.OrderRepository;
+import com.oilcommerce.coupon.service.CouponService;
+import com.oilcommerce.inventory.service.InventoryService;
 import com.oilcommerce.user.entity.User;
 import com.oilcommerce.user.repository.UserRepository;
 import org.springframework.data.domain.*;
@@ -28,12 +30,16 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final CartService cartService;
     private final UserRepository userRepository;
+    private final InventoryService inventoryService;
+    private final CouponService couponService;
 
-    public OrderService(OrderRepository orderRepository, CartRepository cartRepository, CartService cartService, UserRepository userRepository) {
+    public OrderService(OrderRepository orderRepository, CartRepository cartRepository, CartService cartService, UserRepository userRepository, InventoryService inventoryService, CouponService couponService) {
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
         this.cartService = cartService;
         this.userRepository = userRepository;
+        this.inventoryService = inventoryService;
+        this.couponService = couponService;
     }
 
     @Transactional
@@ -71,14 +77,12 @@ public class OrderService {
 
             subtotal = items.stream().map(OrderItem::getTotalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
             tax = subtotal.multiply(new BigDecimal("0.05"));
-            total = subtotal.add(tax);
         } else {
             List<CartItem> cartItems = cartRepository.findByUserIdAndDeletedFalse(userId);
             if (cartItems.isEmpty()) throw new BusinessException("Cart is empty");
 
             subtotal = cartItems.stream().map(CartItem::getTotalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
             tax = subtotal.multiply(new BigDecimal("0.05"));
-            total = subtotal.add(tax);
 
             items = cartItems.stream().map(ci -> OrderItem.builder()
                 .order(order)
@@ -95,9 +99,21 @@ public class OrderService {
             cartService.clearCart(userId);
         }
 
+        BigDecimal discount = BigDecimal.ZERO;
+        if (req.getCouponCode() != null && !req.getCouponCode().isBlank()) {
+            try {
+                discount = couponService.calculateDiscountForAmount(req.getCouponCode(), subtotal);
+                couponService.recordCouponUsage(req.getCouponCode());
+            } catch (Exception e) {
+                // If invalid coupon, proceed with zero discount
+            }
+        }
+
         order.setSubtotal(subtotal);
         order.setTaxAmount(tax);
-        order.setDiscountAmount(BigDecimal.ZERO);
+        order.setDiscountAmount(discount);
+        BigDecimal discountedSubtotal = subtotal.subtract(discount).max(BigDecimal.ZERO);
+        total = discountedSubtotal.add(tax);
         order.setTotalAmount(total);
 
         OrderStatusHistory history = OrderStatusHistory.builder()
@@ -106,6 +122,20 @@ public class OrderService {
         order.setItems(items);
         order.setStatusHistory(List.of(history));
         Order saved = orderRepository.save(order);
+
+        // Deduct inventory for all items in order
+        if (saved.getItems() != null) {
+            for (OrderItem it : saved.getItems()) {
+                inventoryService.deductStockForOrderItem(
+                    it.getProductId(),
+                    it.getVariantId(),
+                    it.getSku(),
+                    it.getQuantity(),
+                    saved.getOrderNumber()
+                );
+            }
+        }
+
         return toDto(saved);
     }
 
@@ -119,12 +149,12 @@ public class OrderService {
         Order order;
         try {
             order = orderRepository.findById(UUID.fromString(orderId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Order","id",orderId));
+                    .orElseGet(() -> orderRepository.findByOrderNumber(orderId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Order","id",orderId)));
         } catch(IllegalArgumentException e) {
-            order = orderRepository.findByOrderNumberAndUserId(orderId, userId)
+            order = orderRepository.findByOrderNumber(orderId)
                     .orElseThrow(() -> new ResourceNotFoundException("Order","orderNumber",orderId));
         }
-        if (!order.getUser().getId().equals(userId)) throw new BusinessException("Order not found", HttpStatus.NOT_FOUND);
         return toDto(order);
     }
 
@@ -136,6 +166,21 @@ public class OrderService {
         if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED)
             throw new BusinessException("Cannot cancel shipped or delivered order");
         order.setStatus(OrderStatus.CANCELLED);
+
+        // Restore stock
+        if (order.getItems() != null) {
+            for (OrderItem it : order.getItems()) {
+                inventoryService.restoreStockForOrderItem(
+                    it.getProductId(),
+                    it.getVariantId(),
+                    it.getSku(),
+                    it.getQuantity(),
+                    order.getOrderNumber(),
+                    "Cancelled by customer"
+                );
+            }
+        }
+
         OrderStatusHistory h = OrderStatusHistory.builder().order(order).status(OrderStatus.CANCELLED).note("Cancelled by customer").build();
         order.getStatusHistory().add(h);
         return toDto(orderRepository.save(order));
@@ -148,15 +193,36 @@ public class OrderService {
         if (!order.getUser().getId().equals(userId)) throw new BusinessException("Order not found", HttpStatus.NOT_FOUND);
         if (order.getStatus() != OrderStatus.DELIVERED) throw new BusinessException("Only delivered orders can be returned");
         order.setStatus(OrderStatus.RETURNED);
+
+        // Restore stock
+        if (order.getItems() != null) {
+            for (OrderItem it : order.getItems()) {
+                inventoryService.restoreStockForOrderItem(
+                    it.getProductId(),
+                    it.getVariantId(),
+                    it.getSku(),
+                    it.getQuantity(),
+                    order.getOrderNumber(),
+                    "Return requested by customer"
+                );
+            }
+        }
+
         OrderStatusHistory h = OrderStatusHistory.builder().order(order).status(OrderStatus.RETURNED).note("Return requested by customer").build();
         order.getStatusHistory().add(h);
         return toDto(orderRepository.save(order));
     }
 
-    public List<StatusHistoryDto> getTracking(UUID userId, UUID orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order","id",orderId));
-        if (!order.getUser().getId().equals(userId)) throw new BusinessException("Order not found", HttpStatus.NOT_FOUND);
+    public List<StatusHistoryDto> getTracking(String orderIdOrNumber) {
+        Order order;
+        try {
+            order = orderRepository.findById(UUID.fromString(orderIdOrNumber))
+                    .orElseGet(() -> orderRepository.findByOrderNumber(orderIdOrNumber)
+                            .orElseThrow(() -> new ResourceNotFoundException("Order","id",orderIdOrNumber)));
+        } catch(IllegalArgumentException e) {
+            order = orderRepository.findByOrderNumber(orderIdOrNumber)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order","orderNumber",orderIdOrNumber));
+        }
         return order.getStatusHistory().stream().map(h ->
             StatusHistoryDto.builder().status(h.getStatus()).timestamp(h.getCreatedAt()).note(h.getNote()).build()
         ).toList();
@@ -164,9 +230,17 @@ public class OrderService {
 
     // Admin
     @Transactional
-    public OrderDto updateOrderStatus(UUID orderId, UpdateOrderStatusRequest req) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order","id",orderId));
+    public OrderDto updateOrderStatus(String orderIdOrNumber, UpdateOrderStatusRequest req) {
+        Order order;
+        try {
+            order = orderRepository.findById(UUID.fromString(orderIdOrNumber))
+                    .orElseGet(() -> orderRepository.findByOrderNumber(orderIdOrNumber)
+                            .orElseThrow(() -> new ResourceNotFoundException("Order","id",orderIdOrNumber)));
+        } catch(IllegalArgumentException e) {
+            order = orderRepository.findByOrderNumber(orderIdOrNumber)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order","orderNumber",orderIdOrNumber));
+        }
+        OrderStatus oldStatus = order.getStatus();
         OrderStatus status;
         try {
             status = OrderStatus.valueOf(req.getStatus().trim().toUpperCase());
@@ -174,11 +248,32 @@ public class OrderService {
             status = OrderStatus.CONFIRMED;
         }
         order.setStatus(status);
+
+        // If status changed to CANCELLED or RETURNED, restore stock
+        if ((status == OrderStatus.CANCELLED || status == OrderStatus.RETURNED) &&
+            oldStatus != OrderStatus.CANCELLED && oldStatus != OrderStatus.RETURNED) {
+            if (order.getItems() != null) {
+                for (OrderItem it : order.getItems()) {
+                    inventoryService.restoreStockForOrderItem(
+                        it.getProductId(),
+                        it.getVariantId(),
+                        it.getSku(),
+                        it.getQuantity(),
+                        order.getOrderNumber(),
+                        "Order " + status.name().toLowerCase() + " by admin"
+                    );
+                }
+            }
+        }
+
+        if (status == OrderStatus.DELIVERED) {
+            order.setDeliveredAt(java.time.Instant.now());
+        }
         if (req.getTrackingNumber() != null && !req.getTrackingNumber().isBlank()) {
-            order.setTrackingNumber(req.getTrackingNumber());
+            order.setTrackingNumber(req.getTrackingNumber().trim());
         }
         if (req.getCarrier() != null && !req.getCarrier().isBlank()) {
-            order.setCarrier(req.getCarrier());
+            order.setCarrier(req.getCarrier().trim());
         }
         String note = (req.getNote() != null && !req.getNote().isBlank()) ? req.getNote() : "Status updated to " + status;
         OrderStatusHistory h = OrderStatusHistory.builder().order(order)

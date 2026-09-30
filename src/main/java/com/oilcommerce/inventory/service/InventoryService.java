@@ -223,4 +223,169 @@ public class InventoryService {
                 .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : Instant.now().toString())
                 .build();
     }
+
+    @Transactional
+    public void deductStockForOrderItem(String productIdStr, String variantIdStr, String sku, int quantity, String orderNumber) {
+        log.info("Deducting stock for order {}: productId={}, variantId={}, sku={}, qty={}",
+                orderNumber, productIdStr, variantIdStr, sku, quantity);
+        try {
+            ProductVariant variant = null;
+            if (variantIdStr != null && !variantIdStr.isBlank()) {
+                try {
+                    UUID vId = UUID.fromString(variantIdStr);
+                    variant = productVariantRepository.findById(vId).orElse(null);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            if (variant == null && sku != null && !sku.isBlank()) {
+                variant = productVariantRepository.findBySkuIgnoreCaseAndDeletedFalse(sku).orElse(null);
+            }
+
+            Product product = null;
+            if (productIdStr != null && !productIdStr.isBlank()) {
+                try {
+                    UUID pId = UUID.fromString(productIdStr);
+                    product = productRepository.findById(pId).orElse(null);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            if (product == null && variant != null) {
+                product = variant.getProduct();
+            }
+
+            if (variant != null) {
+                int prevStock = variant.getStockQuantity();
+                int newStock = Math.max(0, prevStock - quantity);
+                variant.setStockQuantity(newStock);
+                productVariantRepository.save(variant);
+
+                Inventory inv = inventoryRepository.findByVariantIdAndDeletedFalse(variant.getId()).orElse(null);
+                if (inv == null) {
+                    inv = Inventory.builder()
+                            .productId(product != null ? product.getId() : (variant.getProduct() != null ? variant.getProduct().getId() : null))
+                            .variantId(variant.getId())
+                            .quantity(newStock)
+                            .reservedQuantity(0)
+                            .warehouseLocation("Unit #1 Mara Chekku Shed")
+                            .build();
+                } else {
+                    inv.setQuantity(newStock);
+                }
+                inventoryRepository.save(inv);
+
+                StockMovement sm = StockMovement.builder()
+                        .productId(product != null ? product.getId() : (variant.getProduct() != null ? variant.getProduct().getId() : null))
+                        .variantId(variant.getId())
+                        .movementType("STOCK_OUT")
+                        .quantity(quantity)
+                        .previousQuantity(prevStock)
+                        .newQuantity(newStock)
+                        .reason("Customer Order " + orderNumber)
+                        .referenceId("ORD-" + orderNumber)
+                        .build();
+                sm.setCreatedBy("System / Order Processing");
+                stockMovementRepository.save(sm);
+            }
+
+            if (product != null) {
+                int pPrev = product.getStock();
+                int pNew = Math.max(0, pPrev - quantity);
+                product.setStock(pNew);
+                productRepository.save(product);
+
+                if (variant == null) {
+                    StockMovement sm = StockMovement.builder()
+                            .productId(product.getId())
+                            .movementType("STOCK_OUT")
+                            .quantity(quantity)
+                            .previousQuantity(pPrev)
+                            .newQuantity(pNew)
+                            .reason("Customer Order " + orderNumber)
+                            .referenceId("ORD-" + orderNumber)
+                            .build();
+                    sm.setCreatedBy("System / Order Processing");
+                    stockMovementRepository.save(sm);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to deduct stock for order {}: {}", orderNumber, e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public void restoreStockForOrderItem(String productIdStr, String variantIdStr, String sku, int quantity, String orderNumber, String reason) {
+        log.info("Restoring stock for order {}: productId={}, variantId={}, sku={}, qty={}",
+                orderNumber, productIdStr, variantIdStr, sku, quantity);
+        try {
+            ProductVariant variant = null;
+            if (variantIdStr != null && !variantIdStr.isBlank()) {
+                try {
+                    UUID vId = UUID.fromString(variantIdStr);
+                    variant = productVariantRepository.findById(vId).orElse(null);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            if (variant == null && sku != null && !sku.isBlank()) {
+                variant = productVariantRepository.findBySkuIgnoreCaseAndDeletedFalse(sku).orElse(null);
+            }
+
+            Product product = null;
+            if (productIdStr != null && !productIdStr.isBlank()) {
+                try {
+                    UUID pId = UUID.fromString(productIdStr);
+                    product = productRepository.findById(pId).orElse(null);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            if (product == null && variant != null) {
+                product = variant.getProduct();
+            }
+
+            if (variant != null) {
+                int prevStock = variant.getStockQuantity();
+                int newStock = prevStock + quantity;
+                variant.setStockQuantity(newStock);
+                productVariantRepository.save(variant);
+
+                Inventory inv = inventoryRepository.findByVariantIdAndDeletedFalse(variant.getId()).orElse(null);
+                if (inv != null) {
+                    inv.setQuantity(newStock);
+                    inventoryRepository.save(inv);
+                }
+
+                StockMovement sm = StockMovement.builder()
+                        .productId(product != null ? product.getId() : (variant.getProduct() != null ? variant.getProduct().getId() : null))
+                        .variantId(variant.getId())
+                        .movementType("RETURN")
+                        .quantity(quantity)
+                        .previousQuantity(prevStock)
+                        .newQuantity(newStock)
+                        .reason(reason != null ? reason : ("Restocked from " + orderNumber))
+                        .referenceId("ORD-" + orderNumber)
+                        .build();
+                sm.setCreatedBy("System / Order Processing");
+                stockMovementRepository.save(sm);
+            }
+
+            if (product != null) {
+                int pPrev = product.getStock();
+                int pNew = pPrev + quantity;
+                product.setStock(pNew);
+                productRepository.save(product);
+
+                if (variant == null) {
+                    StockMovement sm = StockMovement.builder()
+                            .productId(product.getId())
+                            .movementType("RETURN")
+                            .quantity(quantity)
+                            .previousQuantity(pPrev)
+                            .newQuantity(pNew)
+                            .reason(reason != null ? reason : ("Restocked from " + orderNumber))
+                            .referenceId("ORD-" + orderNumber)
+                            .build();
+                    sm.setCreatedBy("System / Order Processing");
+                    stockMovementRepository.save(sm);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to restore stock for order {}: {}", orderNumber, e.getMessage(), e);
+        }
+    }
 }
+

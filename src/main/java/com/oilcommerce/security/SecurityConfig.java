@@ -56,6 +56,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/platform-settings", "/platform-settings/**", "/admin/platform-settings", "/admin/platform-settings/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/mandi-benchmarks", "/mandi-benchmarks/**", "/admin/mandi-benchmarks", "/admin/mandi-benchmarks/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/reports", "/reports/**", "/admin/reports", "/admin/reports/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/coupons", "/coupons/**", "/admin/coupons", "/admin/coupons/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/coupons/validate").permitAll()
                 // Administrative operational endpoints
                 .requestMatchers(HttpMethod.POST, "/inventory", "/inventory/**", "/admin/inventory", "/admin/inventory/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/tenants", "/tenants/**", "/admin/tenants", "/admin/tenants/**").permitAll()
@@ -75,6 +77,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/mandi-benchmarks", "/mandi-benchmarks/**", "/admin/mandi-benchmarks", "/admin/mandi-benchmarks/**").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/mandi-benchmarks", "/mandi-benchmarks/**", "/admin/mandi-benchmarks", "/admin/mandi-benchmarks/**").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/mandi-benchmarks", "/mandi-benchmarks/**", "/admin/mandi-benchmarks", "/admin/mandi-benchmarks/**").permitAll()
+                // Order management & shipment tracking
+                .requestMatchers(HttpMethod.GET, "/orders", "/orders/**", "/admin/orders", "/admin/orders/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/orders/**", "/admin/orders/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/orders", "/orders/**", "/admin/orders/**").permitAll()
                 // Actuator health
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 // Static files

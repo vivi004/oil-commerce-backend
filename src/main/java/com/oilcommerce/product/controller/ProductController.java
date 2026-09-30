@@ -3,6 +3,7 @@ package com.oilcommerce.product.controller;
 import com.oilcommerce.common.ApiResponse;
 import com.oilcommerce.common.PaginatedResponse;
 import com.oilcommerce.product.dto.*;
+import com.oilcommerce.product.dto.ProductFilterRequest;
 import com.oilcommerce.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -36,6 +37,8 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minRating,
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) Boolean onSale,
+            @RequestParam(required = false) Boolean bestSeller,
+            @RequestParam(required = false) Boolean featured,
             @RequestParam(defaultValue = "newest") String sortBy,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int pageSize) {
@@ -43,8 +46,8 @@ public class ProductController {
         ProductFilterRequest filter = new ProductFilterRequest();
         filter.setSearch(search); filter.setCategoryId(categoryId); filter.setBrand(brand);
         filter.setMinPrice(minPrice); filter.setMaxPrice(maxPrice); filter.setMinRating(minRating);
-        filter.setInStock(inStock); filter.setOnSale(onSale); filter.setSortBy(sortBy);
-        filter.setPage(page); filter.setPageSize(pageSize);
+        filter.setInStock(inStock); filter.setOnSale(onSale); filter.setBestSeller(bestSeller); filter.setFeatured(featured);
+        filter.setSortBy(sortBy); filter.setPage(page); filter.setPageSize(pageSize);
 
         return ResponseEntity.ok(ApiResponse.success(productService.getProducts(filter)));
     }

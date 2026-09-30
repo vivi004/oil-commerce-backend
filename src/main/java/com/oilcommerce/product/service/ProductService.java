@@ -8,6 +8,7 @@ import com.oilcommerce.common.PaginatedResponse;
 import com.oilcommerce.exception.BusinessException;
 import com.oilcommerce.exception.ResourceNotFoundException;
 import com.oilcommerce.product.dto.*;
+import com.oilcommerce.product.dto.ProductFilterRequest;
 import com.oilcommerce.product.entity.*;
 import com.oilcommerce.product.mapper.ProductMapper;
 import com.oilcommerce.product.repository.ProductRepository;
@@ -283,6 +284,8 @@ public class ProductService {
             if (filter.getMinRating() != null) predicates.add(cb.greaterThanOrEqualTo(root.get("rating"),filter.getMinRating()));
             if (Boolean.TRUE.equals(filter.getInStock())) predicates.add(cb.greaterThan(root.get("stock"),0));
             if (Boolean.TRUE.equals(filter.getOnSale())) predicates.add(cb.isTrue(root.get("onSale")));
+            if (Boolean.TRUE.equals(filter.getBestSeller())) predicates.add(cb.isTrue(root.get("bestSeller")));
+            if (Boolean.TRUE.equals(filter.getFeatured())) predicates.add(cb.isTrue(root.get("featured")));
             if (filter.getBrand() != null && !filter.getBrand().isEmpty()) {
                 predicates.add(root.get("brand").get("name").in(filter.getBrand()));
             }
