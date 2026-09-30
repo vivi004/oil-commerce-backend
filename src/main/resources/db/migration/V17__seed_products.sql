@@ -30,8 +30,7 @@ BEGIN
     INSERT INTO products (
         id, name, slug, description, short_description, price, compare_at_price,
         sku, barcode, stock, low_stock_threshold, category_id, brand_id,
-        thumbnail, rating, review_count, featured, on_sale, best_seller, status,
-        origin, shelf_life, purity
+        thumbnail, rating, review_count, featured, on_sale, best_seller, status
     ) VALUES (
         prod_gno_id,
         'Wood Pressed Groundnut Oil (Chekku Kadalai Ennai)',
@@ -40,8 +39,7 @@ BEGIN
         'Traditional wood pressed peanut oil packed with heart-healthy monounsaturated fats.',
         95.00, 110.00, 'NPO-GNO-001', '8901234560011', 345, 25, cat_groundnut_id, brand_nisha_id,
         'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80',
-        4.9, 142, TRUE, FALSE, TRUE, 'ACTIVE',
-        'Kangeyam, Tamil Nadu', '12 Months', '100% Cold-Pressed Unrefined'
+        4.9, 142, TRUE, FALSE, TRUE, 'ACTIVE'
     ) ON CONFLICT (sku) DO NOTHING;
 
     INSERT INTO product_variants (product_id, code, label, mrp, selling_price, sku, barcode, stock_quantity, enabled, gst_percent)
@@ -57,8 +55,7 @@ BEGIN
     INSERT INTO products (
         id, name, slug, description, short_description, price, compare_at_price,
         sku, barcode, stock, low_stock_threshold, category_id, brand_id,
-        thumbnail, rating, review_count, featured, on_sale, best_seller, status,
-        origin, shelf_life, purity
+        thumbnail, rating, review_count, featured, on_sale, best_seller, status
     ) VALUES (
         prod_vco_id,
         'Cold Pressed Virgin Coconut Oil (Thengai Ennai)',
@@ -67,8 +64,7 @@ BEGIN
         'Sulfur-free virgin coconut oil rich in Lauric acid and MCTs.',
         130.00, 145.00, 'NPO-VCO-002', '8901234560028', 190, 20, cat_coconut_id, brand_nisha_id,
         'https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=600&auto=format&fit=crop&q=80',
-        4.8, 98, TRUE, FALSE, TRUE, 'ACTIVE',
-        'Pollachi, Tamil Nadu', '18 Months', '100% Pure Copra Extraction'
+        4.8, 98, TRUE, FALSE, TRUE, 'ACTIVE'
     ) ON CONFLICT (sku) DO NOTHING;
 
     INSERT INTO product_variants (product_id, code, label, mrp, selling_price, sku, barcode, stock_quantity, enabled, gst_percent)
@@ -83,8 +79,7 @@ BEGIN
     INSERT INTO products (
         id, name, slug, description, short_description, price, compare_at_price,
         sku, barcode, stock, low_stock_threshold, category_id, brand_id,
-        thumbnail, rating, review_count, featured, on_sale, best_seller, status,
-        origin, shelf_life, purity
+        thumbnail, rating, review_count, featured, on_sale, best_seller, status
     ) VALUES (
         prod_ses_id,
         'Traditional Wood Pressed Sesame Oil (Gingelly / Nalla Ennai)',
@@ -93,8 +88,7 @@ BEGIN
         'Wood pressed gingelly oil blended with organic palm jaggery.',
         140.00, 160.00, 'NPO-SES-003', '8901234560035', 215, 20, cat_sesame_id, brand_nisha_id,
         'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80',
-        4.9, 116, TRUE, TRUE, FALSE, 'ACTIVE',
-        'Madurai, Tamil Nadu', '12 Months', '90% Black Sesame + 10% Palm Jaggery'
+        4.9, 116, TRUE, TRUE, FALSE, 'ACTIVE'
     ) ON CONFLICT (sku) DO NOTHING;
 
     INSERT INTO product_variants (product_id, code, label, mrp, selling_price, sku, barcode, stock_quantity, enabled, gst_percent)
@@ -109,8 +103,7 @@ BEGIN
     INSERT INTO products (
         id, name, slug, description, short_description, price, compare_at_price,
         sku, barcode, stock, low_stock_threshold, category_id, brand_id,
-        thumbnail, rating, review_count, featured, on_sale, best_seller, status,
-        origin, shelf_life, purity
+        thumbnail, rating, review_count, featured, on_sale, best_seller, status
     ) VALUES (
         prod_cas_id,
         'Cold Pressed Pure Castor Oil (Vilakkennai)',
@@ -119,8 +112,7 @@ BEGIN
         'Unrefined thick castor oil for natural wellness and cooling.',
         105.00, 120.00, 'NPO-CAS-004', '8901234560042', 120, 15, cat_castor_id, brand_nisha_id,
         'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&auto=format&fit=crop&q=80',
-        4.7, 54, FALSE, FALSE, FALSE, 'ACTIVE',
-        'Salem, Tamil Nadu', '24 Months', '100% Cold-Pressed Ricinus'
+        4.7, 54, FALSE, FALSE, FALSE, 'ACTIVE'
     ) ON CONFLICT (sku) DO NOTHING;
 
     INSERT INTO product_variants (product_id, code, label, mrp, selling_price, sku, barcode, stock_quantity, enabled, gst_percent)
@@ -134,8 +126,7 @@ BEGIN
     INSERT INTO products (
         id, name, slug, description, short_description, price, compare_at_price,
         sku, barcode, stock, low_stock_threshold, category_id, brand_id,
-        thumbnail, rating, review_count, featured, on_sale, best_seller, status,
-        origin, shelf_life, purity
+        thumbnail, rating, review_count, featured, on_sale, best_seller, status
     ) VALUES (
         prod_lmp_id,
         'Pancha Deepam Sacred Lamp Oil (Puja Fuel)',
@@ -144,8 +135,7 @@ BEGIN
         'Divine 5-oil blend for long-lasting, soot-free pooja deepams.',
         125.00, 140.00, 'VG-LMP-005', '8901234560059', 240, 30, cat_lamp_id, brand_varshini_id,
         'https://images.unsplash.com/photo-1577937927133-66ef06acdf18?w=600&auto=format&fit=crop&q=80',
-        4.9, 184, TRUE, FALSE, TRUE, 'ACTIVE',
-        'Erode, Tamil Nadu', '24 Months', 'Pancha Deepa Authentic Formula'
+        4.9, 184, TRUE, FALSE, TRUE, 'ACTIVE'
     ) ON CONFLICT (sku) DO NOTHING;
 
     INSERT INTO product_variants (product_id, code, label, mrp, selling_price, sku, barcode, stock_quantity, enabled, gst_percent)
