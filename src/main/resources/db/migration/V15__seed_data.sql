@@ -1,4 +1,4 @@
-﻿-- V15: Seed categories, brands, and default admin user
+-- V15: Seed categories, brands, and default admin user
 
 -- Seed Brands
 INSERT INTO brands (id, name, slug, description, tagline, origin, active) VALUES
@@ -13,7 +13,7 @@ ON CONFLICT (slug) DO NOTHING;
 -- Seed Categories
 INSERT INTO categories (id, name, slug, description, icon, sort_order, active) VALUES
     (gen_random_uuid(), 'Groundnut Oil', 'groundnut-oil',
-     'Traditional wood-churned (Marachekku) and filtered groundnut oils packed with heart-healthy MUFA.',
+     'Traditional wood-churned (Chekku Oil) and filtered groundnut oils packed with heart-healthy MUFA.',
      '🥜', 1, TRUE),
     (gen_random_uuid(), 'Coconut Oil', 'coconut-oil',
      'Sun-dried copra virgin cold-pressed coconut oil for aromatic cooking, skin glow, and hair health.',

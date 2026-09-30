@@ -34,7 +34,7 @@ BEGIN
         origin, shelf_life, purity
     ) VALUES (
         prod_gno_id,
-        'Wood Pressed Groundnut Oil (Marachekku Kadalai Ennai)',
+        'Wood Pressed Groundnut Oil (Chekku Kadalai Ennai)',
         'wood-pressed-groundnut-oil',
         'Extracted using traditional Vaagai wood churners under 40°C. Zero chemical refining, natural golden color with rich peanut aroma.',
         'Traditional wood pressed peanut oil packed with heart-healthy monounsaturated fats.',
